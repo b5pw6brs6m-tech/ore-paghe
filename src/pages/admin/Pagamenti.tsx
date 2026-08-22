@@ -5,17 +5,23 @@ import { IconPlus, IconRight, IconWallet } from '../../components/icons'
 import { dataMedia, euro, maiuscola, meseLabel } from '../../lib/format'
 import { perMese, riepilogo, round2 } from '../../lib/calc'
 import { db } from '../../lib/db'
-import { useCarica } from '../../context/AppContext'
+import { useApp, useCarica } from '../../context/AppContext'
 import type { Entry, Payment, Worker } from '../../lib/types'
 import { FormPagamento } from './Lavoratore'
 
 export default function AdminPagamenti() {
+  const { refresh } = useApp()
   const [scelta, setScelta] = useState(false)
   const [target, setTarget] = useState<Worker | null>(null)
 
   const { dati: workers, caricando: c1 } = useCarica<Worker[]>(() => db.listWorkers(), [], [])
   const { dati: payments, caricando: c2 } = useCarica<Payment[]>(() => db.listPayments(), [], [])
   const { dati: entries, caricando: c3 } = useCarica<Entry[]>(() => db.listEntries(), [], [])
+
+  async function elimina(id: string) {
+    if (!confirm('¿Eliminar este pago? Volverá a contar en lo que le debes.')) return
+    try { await db.deletePayment(id); refresh() } catch (e) { alert(e instanceof Error ? e.message : 'Error') }
+  }
 
   if (c1 || c2 || c3) return <Caricamento />
 
@@ -80,6 +86,11 @@ export default function AdminPagamenti() {
                         </p>
                       </div>
                       <p className="text-[17px] font-extrabold text-emerald-600">{euro(p.amount)}</p>
+                      <button onClick={() => void elimina(p.id)} aria-label="Eliminar"
+                              className="shrink-0 rounded-xl bg-rose-50 p-2 text-rose-500 transition active:scale-90">
+                        <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor"
+                             strokeWidth={2} strokeLinecap="round"><path d="M6 6l12 12M18 6 6 18" /></svg>
+                      </button>
                     </Card>
                   ))}
                 </div>

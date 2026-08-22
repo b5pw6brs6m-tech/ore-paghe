@@ -121,7 +121,8 @@ export default function AdminLavoratore() {
 
         {tab === 'tutto' ? (
           <Movimenti entries={entries} payments={payments}
-                     vuotoTesto={`Aquí verás por fecha cada jornada de ${worker.name.split(' ')[0]} y cada pago que le hagas.`} />
+                     vuotoTesto={`Aquí verás por fecha cada jornada de ${worker.name.split(' ')[0]} y cada pago que le hagas.`}
+                     onElimina={m => m.tipo === 'pagamento' ? void eliminaPagamento(m.id) : void eliminaOre(m.id)} />
         ) : tab === 'ore' ? (
           entries.length === 0 ? (
             <Vuoto icona={<IconClock className="h-6 w-6" />} titolo="Ninguna jornada"
@@ -315,10 +316,16 @@ function FormAccesso({ open, onClose, worker }: { open: boolean; onClose: () => 
   const clave = worker.access_password ?? password
   const enlace = `${window.location.origin}${import.meta.env.BASE_URL}`
   const messaggio =
-    `Hola ${worker.name.split(' ')[0]}, este es tu acceso a la app "Horas y Pagos":\n\n${enlace}\n\n` +
-    `Usuario: ${(vista === 'ver' ? usuario : utente).split('@')[0]}\nContraseña: ${vista === 'ver' ? clave : password}\n\n` +
-    `Cada tarde, al terminar la jornada, abre la app y registra las horas que has hecho. ` +
-    `Solo se puede el mismo día: al día siguiente ya no se puede.`
+    `¡Hola ${worker.name.split(' ')[0]}! ¿Qué tal?\n\n` +
+    `He preparado esta aplicación para llevar el control de las horas y de los pagos, ` +
+    `así los dos sabemos siempre cómo vamos.\n\n` +
+    `Ábrela aquí:\n${enlace}\n\n` +
+    `Entra con estos datos:\n` +
+    `Usuario: ${(vista === 'ver' ? usuario : utente).split('@')[0]}\n` +
+    `Contraseña: ${vista === 'ver' ? clave : password}\n\n` +
+    `Cada tarde, al terminar la jornada, entra y apunta las horas que has hecho. ` +
+    `Solo se puede el mismo día: al día siguiente ya no se puede.\n\n` +
+    `Ahí ves siempre los días que has trabajado, lo que llevas ganado y lo que te he pagado.`
 
   async function copia() {
     const ok = await copiaTesto(messaggio)

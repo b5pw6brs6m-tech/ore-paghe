@@ -8,12 +8,14 @@ import type { Entry, Payment } from '../lib/types'
  * Storico unico: ogni giornata e ogni pagamento in ordine di data,
  * con il saldo residuo dopo ciascun movimento.
  */
-export function Movimenti({ entries, payments, vuotoTesto, limite }: {
+export function Movimenti({ entries, payments, vuotoTesto, limite, onElimina }: {
   entries: Entry[]
   payments: Payment[]
   vuotoTesto: string
   /** Mostra solo i primi N movimenti. Il saldo resta calcolato su tutto lo storico. */
   limite?: number
+  /** Se presente, ogni riga mostra il tasto per cancellarla. */
+  onElimina?: (m: { tipo: 'ora' | 'pagamento'; id: string }) => void
 }) {
   const tutti = movimenti(entries, payments)
   const righe = limite ? tutti.slice(0, limite) : tutti
@@ -47,6 +49,17 @@ export function Movimenti({ entries, payments, vuotoTesto, limite }: {
               </p>
               <p className="text-[11px] text-ink-400">quedan {euro(m.saldoDopo)}</p>
             </div>
+
+            {onElimina && (
+              <button
+                onClick={() => onElimina({ tipo: m.tipo, id: m.id })}
+                aria-label="Eliminar"
+                className="ml-1 shrink-0 rounded-xl bg-rose-50 p-2 text-rose-500 transition active:scale-90"
+              >
+                <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor"
+                     strokeWidth={2} strokeLinecap="round"><path d="M6 6l12 12M18 6 6 18" /></svg>
+              </button>
+            )}
           </Card>
         )
       })}
