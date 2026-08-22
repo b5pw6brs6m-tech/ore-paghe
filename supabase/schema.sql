@@ -30,6 +30,9 @@ create table if not exists public.workers (
 alter table public.workers add column if not exists access_login    text;
 alter table public.workers add column if not exists access_password text;
 
+-- Ultima volta che il lavoratore ha aperto l'app, anche senza registrare niente.
+alter table public.workers add column if not exists last_seen timestamptz;
+
 create index if not exists workers_admin_idx on public.workers(admin_id);
 create index if not exists workers_user_idx  on public.workers(user_id);
 
@@ -175,6 +178,18 @@ create or replace function public.e_lavoratore_di(w uuid)
 returns boolean language sql stable security definer set search_path = public as $$
   select exists (select 1 from public.workers where id = w and user_id = auth.uid())
 $$;
+
+-- ------------------------------------------- 4-bis. Segnale di presenza
+-- Il lavoratore deve poter dire "sono entrato", ma NON deve poter toccare
+-- la sua tariffa. Per questo non gli si dà il permesso di modificare la
+-- scheda: passa da questa funzione, che scrive solo quel campo e nient'altro.
+
+create or replace function public.segna_presenza()
+returns void language sql security definer set search_path = public as $$
+  update public.workers set last_seen = now() where user_id = auth.uid()
+$$;
+
+grant execute on function public.segna_presenza() to authenticated;
 
 -- --------------------------------------------------------------- 5. Regole
 

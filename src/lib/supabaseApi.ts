@@ -181,6 +181,10 @@ export const supabaseApi: Api = {
     }
   },
 
+  async segnaPresenza() {
+    await sb().rpc('segna_presenza')
+  },
+
   async myWorker() {
     const { data: u } = await sb().auth.getUser()
     if (!u.user) return null

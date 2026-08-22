@@ -8,7 +8,7 @@ import { riepilogo, round2 } from '../../lib/calc'
 import { db } from '../../lib/db'
 import { useApp, useCarica } from '../../context/AppContext'
 import { avvisa, chiediPermessoNotifiche, segnaVisto, ultimaVisita } from '../../lib/novita'
-import { ultimoIngresso } from '../../lib/ultimoIngresso'
+import { ultimoAccesso } from '../../lib/ultimoIngresso'
 import type { Entry, Payment, Worker } from '../../lib/types'
 
 export default function AdminLavoratori() {
@@ -46,7 +46,7 @@ export default function AdminLavoratori() {
   const totali = workers.map(w => ({
     w,
     r: riepilogo(entries.filter(e => e.worker_id === w.id), payments.filter(p => p.worker_id === w.id)),
-    ingresso: ultimoIngresso(entries.filter(e => e.worker_id === w.id), w.user_id),
+    accesso: ultimoAccesso(w),
   }))
   const daPagare = round2(totali.reduce((a, t) => a + t.r.balance, 0))
   const oreTotali = round2(totali.reduce((a, t) => a + t.r.totalHours, 0))
@@ -128,7 +128,7 @@ export default function AdminLavoratori() {
           />
         ) : (
           <div className="space-y-2.5">
-            {totali.map(({ w, r, ingresso }) => (
+            {totali.map(({ w, r, accesso }) => (
               <Card key={w.id} onClick={() => nav(`/lavoratore/${w.id}`)} className="overflow-hidden">
                 <div className="flex items-center gap-3.5 px-4 pt-4 pb-3.5">
                   <Avatar name={w.name} />
@@ -149,8 +149,8 @@ export default function AdminLavoratori() {
 
                 {/* riga di stato: quando ha registrato l'ultima volta */}
                 <div className="flex items-center gap-2 border-t border-ink-100 bg-ink-50/60 px-4 py-2.5">
-                  <Led stato={ingresso.stato} />
-                  <span className="truncate text-[12.5px] text-ink-500">{ingresso.testo}</span>
+                  <Led stato={accesso.stato} />
+                  <span className="truncate text-[12.5px] text-ink-500">{accesso.testo}</span>
                   <span className="ml-auto shrink-0 text-[12px] text-ink-400">
                     {!w.user_id
                       ? <b className="font-semibold text-amber-600">falta el acceso</b>

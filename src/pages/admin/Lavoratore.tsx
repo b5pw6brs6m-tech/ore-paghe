@@ -4,7 +4,7 @@ import { Avatar, Button, Caricamento, Card, Errore, Field, Led, Sheet, Spinner, 
 import { IconCheck, IconClock, IconCopy, IconEdit, IconKey, IconLeft, IconPlus, IconShare, IconTrash, IconWallet } from '../../components/icons'
 import { dataLunga, euro, maiuscola, oreLabel, todayISO } from '../../lib/format'
 import { calcolaOre, riepilogo, round2 } from '../../lib/calc'
-import { ultimoIngresso } from '../../lib/ultimoIngresso'
+import { ultimaRegistrazione, ultimoAccesso } from '../../lib/ultimoIngresso'
 import { db } from '../../lib/db'
 import { normalizzaLogin } from '../../lib/api'
 import { apriWhatsApp, condividiNativo, copiaTesto } from '../../lib/condividi'
@@ -41,7 +41,8 @@ export default function AdminLavoratore() {
   }
 
   const r = riepilogo(entries, payments)
-  const ingresso = ultimoIngresso(entries, worker.user_id)
+  const accesso = ultimoAccesso(worker)
+  const registrazione = ultimaRegistrazione(entries, worker.user_id)
 
   async function eliminaOre(entryId: string) {
     if (!confirm('¿Eliminar esta jornada?')) return
@@ -73,10 +74,11 @@ export default function AdminLavoratore() {
           <div className="min-w-0">
             <h1 className="truncate text-[24px] font-extrabold leading-tight tracking-tight">{worker.name}</h1>
             <p className="text-[14px] text-white/75">{euro(worker.hourly_rate)} por hora</p>
-            <p className="mt-1.5 flex items-center gap-1.5 truncate text-[12.5px] text-white/70">
-              <Led stato={ingresso.stato} />
-              {ingresso.testo}
+            <p className="mt-1.5 flex items-center gap-1.5 truncate text-[12.5px] text-white/75">
+              <Led stato={accesso.stato} />
+              {accesso.testo}
             </p>
+            <p className="mt-0.5 truncate pl-4 text-[12px] text-white/55">{registrazione.testo}</p>
           </div>
         </div>
 

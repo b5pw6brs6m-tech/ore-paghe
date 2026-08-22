@@ -21,6 +21,8 @@ export type Worker = {
   /** Credenziali consegnate al lavoratore, così il titolare può rimandargliele. */
   access_login: string | null
   access_password: string | null
+  /** Ultima volta che ha aperto l'app, anche senza registrare nulla. */
+  last_seen: string | null
   active: boolean
   created_at: string
 }

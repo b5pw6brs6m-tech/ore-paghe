@@ -26,6 +26,8 @@ export interface Api {
   inRecupero(): boolean
   /** Prova le credenziali senza toccare la sessione in corso. */
   verificaCredenziali(login: string, password: string): Promise<boolean>
+  /** Il lavoratore segnala che ha aperto l'app. */
+  segnaPresenza(): Promise<void>
 
   // --- Area admin ---
   listWorkers(): Promise<Worker[]>

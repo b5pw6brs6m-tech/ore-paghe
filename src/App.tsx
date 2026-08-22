@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { Navigate, Route, Routes, useLocation } from 'react-router-dom'
 import { Button, Caricamento, Errore, Field, Spinner, Vuoto, inputCls } from './components/ui'
 import { Shell, type NavItem } from './components/Shell'
@@ -69,6 +69,22 @@ function AreaLavoratore() {
   const { pathname } = useLocation()
   const { signOut } = useApp()
   const { dati: worker, caricando } = useCarica<Worker | null>(() => db.myWorker(), [], null)
+
+  // Segnala al titolare che il lavoratore ha aperto l'app, anche se poi non
+  // registra niente. Non più di una volta ogni due minuti.
+  const ultimoSegnale = useRef(0)
+  useEffect(() => {
+    const segnala = () => {
+      if (document.hidden) return
+      const ora = Date.now()
+      if (ora - ultimoSegnale.current < 120_000) return
+      ultimoSegnale.current = ora
+      void db.segnaPresenza().catch(() => {})
+    }
+    segnala()
+    document.addEventListener('visibilitychange', segnala)
+    return () => document.removeEventListener('visibilitychange', segnala)
+  }, [])
 
   if (caricando) return <Caricamento />
 

@@ -34,7 +34,7 @@ function seed(): Db {
     const w: Worker = {
       id: uid(), admin_id: adminId, user_id: workerUserId, name: nome,
       hourly_rate: tariffa, link_code: codiceCasuale(),
-      access_login: login, access_password: 'demo', active: true, created_at: now(),
+      access_login: login, access_password: 'demo', last_seen: null, active: true, created_at: now(),
     }
     db.workers.push(w)
     db.accounts.push({ userId: workerUserId, login, password: 'demo', fullName: nome, role: 'worker' })
@@ -190,7 +190,7 @@ export const localApi: Api = {
     const w: Worker = {
       id: uid(), admin_id: a.userId, user_id: null, name: name.trim(),
       hourly_rate: round2(hourlyRate), link_code: codiceCasuale(),
-      access_login: null, access_password: null, active: true, created_at: now(),
+      access_login: null, access_password: null, last_seen: null, active: true, created_at: now(),
     }
     db.workers.push(w)
     save()
@@ -225,6 +225,12 @@ export const localApi: Api = {
     w.access_login = l
     w.access_password = password
     save()
+  },
+
+  async segnaPresenza() {
+    const a = requireAccount()
+    const w = db.workers.find(x => x.user_id === a.userId)
+    if (w) { w.last_seen = now(); save() }
   },
 
   async myWorker() {
