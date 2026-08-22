@@ -18,7 +18,7 @@ import Registra from './pages/worker/Registra'
 export default function App() {
   const { user, loading } = useApp()
 
-  if (loading) return <Caricamento testo="Un attimo…" />
+  if (loading) return <Caricamento testo="Un momento…" />
   if (!user) return <Login />
   return user.role === 'admin' ? <AreaAdmin /> : <AreaLavoratore />
 }
@@ -26,8 +26,8 @@ export default function App() {
 /* ----------------------------------------------------------------- admin */
 
 const NAV_ADMIN: NavItem[] = [
-  { to: '/', label: 'Lavoratori', icon: <IconUsers className="h-[22px] w-[22px]" />, end: true },
-  { to: '/pagamenti', label: 'Pagamenti', icon: <IconWallet className="h-[22px] w-[22px]" /> },
+  { to: '/', label: 'Trabajadores', icon: <IconUsers className="h-[22px] w-[22px]" />, end: true },
+  { to: '/pagamenti', label: 'Pagos', icon: <IconWallet className="h-[22px] w-[22px]" /> },
 ]
 
 function AreaAdmin() {
@@ -57,9 +57,9 @@ function AreaAdmin() {
 /* ------------------------------------------------------------ lavoratore */
 
 const NAV_WORKER: NavItem[] = [
-  { to: '/', label: 'Riepilogo', icon: <IconWallet className="h-[22px] w-[22px]" />, end: true },
-  { to: '/ore', label: 'Le mie ore', icon: <IconClock className="h-[22px] w-[22px]" /> },
-  { to: '/pagamenti', label: 'Pagamenti', icon: <IconUsers className="h-[22px] w-[22px]" /> },
+  { to: '/', label: 'Resumen', icon: <IconWallet className="h-[22px] w-[22px]" />, end: true },
+  { to: '/ore', label: 'Mis horas', icon: <IconClock className="h-[22px] w-[22px]" /> },
+  { to: '/pagamenti', label: 'Pagos', icon: <IconUsers className="h-[22px] w-[22px]" /> },
 ]
 
 function AreaLavoratore() {
@@ -74,9 +74,9 @@ function AreaLavoratore() {
       <div className="min-h-full bg-ink-100 p-5 pt-24">
         <Vuoto
           icona={<IconClock className="h-6 w-6" />}
-          titolo="Account non ancora collegato"
-          testo="Chiedi al titolare di ricreare il tuo accesso: il profilo non risulta associato a nessun lavoratore."
-          azione={<Button variant="soft" onClick={() => void signOut()}>Esci</Button>}
+          titolo="Cuenta todavía sin vincular"
+          testo="Pídele al jefe que te vuelva a crear el acceso: tu perfil no está asociado a ningún trabajador."
+          azione={<Button variant="soft" onClick={() => void signOut()}>Salir</Button>}
         />
       </div>
     )

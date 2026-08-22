@@ -98,7 +98,7 @@ export function Sheet({ open, onClose, title, children }: { open: boolean; onClo
       <div className="relative w-full max-w-[480px] animate-rise rounded-t-[28px] bg-white shadow-2xl sm:rounded-[28px] max-h-[92vh] overflow-y-auto safe-bottom">
         <div className="sticky top-0 z-10 flex items-center justify-between gap-3 rounded-t-[28px] border-b border-ink-100 bg-white/95 px-5 py-4 backdrop-blur">
           <h2 className="text-[17px] font-bold text-ink-900">{title}</h2>
-          <button onClick={onClose} aria-label="Chiudi" className="rounded-full bg-ink-100 p-2 text-ink-500 active:scale-90 transition">
+          <button onClick={onClose} aria-label="Cerrar" className="rounded-full bg-ink-100 p-2 text-ink-500 active:scale-90 transition">
             <IconX className="h-4 w-4" />
           </button>
         </div>
@@ -139,7 +139,7 @@ export function Spinner({ className }: { className?: string }) {
   )
 }
 
-export function Caricamento({ testo = 'Caricamento…' }: { testo?: string }) {
+export function Caricamento({ testo = 'Cargando…' }: { testo?: string }) {
   return (
     <div className="flex flex-col items-center justify-center gap-3 py-20 text-ink-400">
       <Spinner className="h-7 w-7 text-brand-500" />

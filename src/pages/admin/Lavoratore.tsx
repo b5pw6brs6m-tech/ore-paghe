@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { Avatar, Button, Caricamento, Card, Errore, Field, Sheet, Spinner, Vuoto, cx, inputCls } from '../../components/ui'
 import { IconCheck, IconClock, IconCopy, IconEdit, IconKey, IconLeft, IconPlus, IconShare, IconTrash, IconWallet } from '../../components/icons'
-import { dataLunga, euro, oreLabel, todayISO } from '../../lib/format'
+import { dataLunga, euro, maiuscola, oreLabel, todayISO } from '../../lib/format'
 import { calcolaOre, riepilogo, round2 } from '../../lib/calc'
 import { db } from '../../lib/db'
 import { normalizzaLogin } from '../../lib/api'
@@ -32,9 +32,9 @@ export default function AdminLavoratore() {
   if (!worker) {
     return (
       <div className="p-5 pt-16">
-        <Vuoto icona={<IconClock className="h-6 w-6" />} titolo="Lavoratore non trovato"
-               testo="Potrebbe essere stato eliminato."
-               azione={<Button variant="soft" onClick={() => nav('/')}>Torna ai lavoratori</Button>} />
+        <Vuoto icona={<IconClock className="h-6 w-6" />} titolo="Trabajador no encontrado"
+               testo="Puede que lo hayan eliminado."
+               azione={<Button variant="soft" onClick={() => nav('/')}>Volver a trabajadores</Button>} />
       </div>
     )
   }
@@ -42,11 +42,11 @@ export default function AdminLavoratore() {
   const r = riepilogo(entries, payments)
 
   async function eliminaOre(entryId: string) {
-    if (!confirm('Vuoi eliminare questa giornata?')) return
+    if (!confirm('¿Eliminar esta jornada?')) return
     await db.deleteEntry(entryId); refresh()
   }
   async function eliminaPagamento(pid: string) {
-    if (!confirm('Vuoi eliminare questo pagamento?')) return
+    if (!confirm('¿Eliminar este pago?')) return
     await db.deletePayment(pid); refresh()
   }
 
@@ -54,14 +54,14 @@ export default function AdminLavoratore() {
     <>
       <header className="rounded-b-[32px] bg-gradient-to-br from-brand-700 via-brand-600 to-brand-500 px-5 pb-7 pt-4 text-white safe-top">
         <div className="flex items-center justify-between pt-3">
-          <button onClick={() => nav('/')} aria-label="Indietro"
+          <button onClick={() => nav('/')} aria-label="Atrás"
                   className="rounded-full bg-white/15 p-2.5 active:scale-90 transition">
             <IconLeft className="h-5 w-5" />
           </button>
           <div className="flex gap-2">
-            <button onClick={() => setApriAccesso(true)} aria-label="Accesso"
+            <button onClick={() => setApriAccesso(true)} aria-label="Acceso"
                     className="rounded-full bg-white/15 p-2.5 active:scale-90 transition"><IconKey className="h-5 w-5" /></button>
-            <button onClick={() => setApriModifica(true)} aria-label="Modifica"
+            <button onClick={() => setApriModifica(true)} aria-label="Editar"
                     className="rounded-full bg-white/15 p-2.5 active:scale-90 transition"><IconEdit className="h-5 w-5" /></button>
           </div>
         </div>
@@ -70,17 +70,17 @@ export default function AdminLavoratore() {
           <Avatar name={worker.name} size={56} />
           <div className="min-w-0">
             <h1 className="truncate text-[24px] font-extrabold leading-tight tracking-tight">{worker.name}</h1>
-            <p className="text-[14px] text-white/75">{euro(worker.hourly_rate)} all’ora</p>
+            <p className="text-[14px] text-white/75">{euro(worker.hourly_rate)} por hora</p>
           </div>
         </div>
 
         <div className="mt-6 rounded-[26px] bg-white/12 p-5 ring-1 ring-white/20 backdrop-blur">
-          <p className="text-[13px] font-medium text-white/70">Gli devi ancora</p>
+          <p className="text-[13px] font-medium text-white/70">Aún le debes</p>
           <p className="mt-1 text-[40px] font-extrabold leading-none tracking-tight">{euro(r.balance)}</p>
           <div className="mt-4 grid grid-cols-3 gap-2 border-t border-white/20 pt-4 text-center">
-            <Mini v={oreLabel(r.totalHours)} t={`${r.days} giornate`} />
-            <Mini v={euro(r.totalEarned)} t="maturato" />
-            <Mini v={euro(r.totalPaid)} t="già pagato" />
+            <Mini v={oreLabel(r.totalHours)} t={`${r.days} jornadas`} />
+            <Mini v={euro(r.totalEarned)} t="acumulado" />
+            <Mini v={euro(r.totalPaid)} t="ya pagado" />
           </div>
         </div>
       </header>
@@ -88,12 +88,12 @@ export default function AdminLavoratore() {
       {!worker.user_id && (
         <div className="px-5 pt-5">
           <Card className="border border-amber-200 bg-amber-50 p-4 shadow-none">
-            <p className="text-[14px] font-bold text-amber-900">Accesso non ancora creato</p>
+            <p className="text-[14px] font-bold text-amber-900">Acceso todavía sin crear</p>
             <p className="mt-1 text-[13px] leading-relaxed text-amber-800">
-              Crea nome utente e password per {worker.name.split(' ')[0]}, così potrà registrare le ore dal suo telefono.
+              Crea el usuario y la contraseña de {worker.name.split(' ')[0]} para que pueda registrar sus horas desde su móvil.
             </p>
             <Button variant="soft" className="mt-3" onClick={() => setApriAccesso(true)}>
-              <IconKey className="h-4 w-4" /> Crea l’accesso
+              <IconKey className="h-4 w-4" /> Crear el acceso
             </Button>
           </Card>
         </div>
@@ -101,16 +101,16 @@ export default function AdminLavoratore() {
 
       <div className="space-y-2.5 px-5 pt-5">
         <Button size="lg" full variant="success" onClick={() => setApriPagamento(true)}>
-          <IconWallet className="h-5 w-5" /> Registra un pagamento
+          <IconWallet className="h-5 w-5" /> Registrar un pago
         </Button>
         <Button variant="ghost" full onClick={() => setApriGiornata(true)}>
-          <IconPlus className="h-4 w-4" /> Aggiungi una giornata dimenticata
+          <IconPlus className="h-4 w-4" /> Añadir una jornada olvidada
         </Button>
       </div>
 
       <div className="px-5 pt-6">
         <div className="mb-4 flex rounded-2xl bg-white p-1 ring-1 ring-ink-200">
-          {([['tutto', 'Tutto'], ['ore', `Ore (${entries.length})`], ['pagamenti', `Pagati (${payments.length})`]] as const).map(([k, t]) => (
+          {([['tutto', 'Todo'], ['ore', `Horas (${entries.length})`], ['pagamenti', `Pagos (${payments.length})`]] as const).map(([k, t]) => (
             <button key={k} onClick={() => setTab(k)}
               className={cx('flex-1 rounded-xl py-2.5 text-[13px] font-semibold transition',
                 tab === k ? 'bg-brand-600 text-white shadow-sm' : 'text-ink-500')}>
@@ -121,12 +121,12 @@ export default function AdminLavoratore() {
 
         {tab === 'tutto' ? (
           <Movimenti entries={entries} payments={payments}
-                     vuotoTesto={`Qui vedrai in ordine di data ogni giornata di ${worker.name.split(' ')[0]} e ogni pagamento che gli fai.`} />
+                     vuotoTesto={`Aquí verás por fecha cada jornada de ${worker.name.split(' ')[0]} y cada pago que le hagas.`} />
         ) : tab === 'ore' ? (
           entries.length === 0 ? (
-            <Vuoto icona={<IconClock className="h-6 w-6" />} titolo="Nessuna giornata"
-                   testo={`${worker.name.split(' ')[0]} registra le sue ore a fine giornata. Se se ne dimentica una, puoi aggiungerla tu.`}
-                   azione={<Button variant="soft" onClick={() => setApriGiornata(true)}><IconPlus className="h-4 w-4" /> Aggiungi giornata</Button>} />
+            <Vuoto icona={<IconClock className="h-6 w-6" />} titolo="Ninguna jornada"
+                   testo={`${worker.name.split(' ')[0]} registra sus horas al terminar el día. Si se le olvida una, puedes añadirla tú.`}
+                   azione={<Button variant="soft" onClick={() => setApriGiornata(true)}><IconPlus className="h-4 w-4" /> Añadir jornada</Button>} />
           ) : (
             <div className="space-y-2.5">
               {entries.map(e => <RigaGiorno key={e.id} e={e} onDelete={() => void eliminaOre(e.id)} />)}
@@ -134,9 +134,9 @@ export default function AdminLavoratore() {
           )
         ) : (
           payments.length === 0 ? (
-            <Vuoto icona={<IconWallet className="h-6 w-6" />} titolo="Nessun pagamento"
-                   testo="Registra un pagamento: verrà scalato dal totale e lui lo vedrà subito."
-                   azione={<Button variant="soft" onClick={() => setApriPagamento(true)}><IconPlus className="h-4 w-4" /> Registra pagamento</Button>} />
+            <Vuoto icona={<IconWallet className="h-6 w-6" />} titolo="Ningún pago"
+                   testo="Registra un pago: se descontará del total y él lo verá al momento."
+                   azione={<Button variant="soft" onClick={() => setApriPagamento(true)}><IconPlus className="h-4 w-4" /> Registrar pago</Button>} />
           ) : (
             <div className="space-y-2.5">
               {payments.map(p => <RigaPagamento key={p.id} p={p} onDelete={() => void eliminaPagamento(p.id)} />)}
@@ -168,7 +168,7 @@ export function FormPagamento({ open, onClose, worker, saldo }: { open: boolean;
   const { refresh } = useApp()
   const [importo, setImporto] = useState('')
   const [data, setData] = useState(todayISO())
-  const [metodo, setMetodo] = useState('Contanti')
+  const [metodo, setMetodo] = useState('Efectivo')
   const [nota, setNota] = useState('')
   const [errore, setErrore] = useState('')
   const [attesa, setAttesa] = useState(false)
@@ -177,24 +177,24 @@ export function FormPagamento({ open, onClose, worker, saldo }: { open: boolean;
     setErrore(''); setAttesa(true)
     try {
       const v = Number(String(importo).replace(',', '.'))
-      if (!Number.isFinite(v) || v <= 0) throw new Error('Inserisci l’importo che hai pagato.')
+      if (!Number.isFinite(v) || v <= 0) throw new Error('Pon el importe que le has pagado.')
       await db.addPayment({ worker_id: worker.id, paid_on: data, amount: v, method: metodo || null, note: nota.trim() || null })
       refresh()
       setImporto(''); setNota('')
       onClose()
     } catch (err) {
-      setErrore(err instanceof Error ? err.message : 'Non sono riuscito a salvare.')
+      setErrore(err instanceof Error ? err.message : 'No he podido guardar.')
     } finally { setAttesa(false) }
   }
 
   return (
-    <Sheet open={open} onClose={onClose} title={`Pagamento a ${worker.name.split(' ')[0]}`}>
+    <Sheet open={open} onClose={onClose} title={`Pago a ${worker.name.split(' ')[0]}`}>
       <div className="space-y-4">
         <div className="rounded-2xl bg-brand-50 px-4 py-3 text-[14px] font-medium text-brand-700">
-          In questo momento gli devi <b>{euro(saldo)}</b>
+          Ahora mismo le debes <b>{euro(saldo)}</b>
         </div>
 
-        <Field label="Quanto hai pagato (€)">
+        <Field label="¿Cuánto le has pagado? (€)">
           <input className={`${inputCls} text-center text-[30px] font-extrabold`} value={importo}
                  onChange={e => setImporto(e.target.value)} type="text" inputMode="decimal" placeholder="0,00" autoFocus />
         </Field>
@@ -202,17 +202,17 @@ export function FormPagamento({ open, onClose, worker, saldo }: { open: boolean;
         {saldo > 0 && (
           <button onClick={() => setImporto(saldo.toFixed(2).replace('.', ','))}
                   className="w-full rounded-2xl bg-white px-4 py-3 text-[14px] font-semibold text-brand-700 ring-1 ring-ink-200 active:scale-[.98] transition">
-            Salda tutto: {euro(saldo)}
+            Saldar todo: {euro(saldo)}
           </button>
         )}
 
-        <Field label="Data del pagamento">
+        <Field label="Fecha del pago">
           <input type="date" className={inputCls} value={data} onChange={e => e.target.value && setData(e.target.value)} />
         </Field>
 
-        <Field label="Come hai pagato">
+        <Field label="¿Cómo le has pagado?">
           <div className="grid grid-cols-3 gap-2">
-            {['Contanti', 'Bonifico', 'Altro'].map(m => (
+            {['Efectivo', 'Transferencia', 'Otro'].map(m => (
               <button key={m} onClick={() => setMetodo(m)}
                 className={cx('rounded-2xl py-3 text-[14px] font-semibold transition active:scale-95',
                   metodo === m ? 'bg-brand-600 text-white' : 'bg-white text-ink-700 ring-1 ring-ink-200')}>
@@ -222,14 +222,14 @@ export function FormPagamento({ open, onClose, worker, saldo }: { open: boolean;
           </div>
         </Field>
 
-        <Field label="Nota (facoltativa)">
+        <Field label="Nota (opcional)">
           <input className={inputCls} value={nota} onChange={e => setNota(e.target.value)}
-                 placeholder="Es. saldo di agosto" maxLength={120} />
+                 placeholder="Ej. saldo de agosto" maxLength={120} />
         </Field>
 
         <Errore>{errore}</Errore>
         <Button size="lg" full variant="success" onClick={salva} disabled={attesa || !importo}>
-          {attesa ? <Spinner /> : <><IconCheck className="h-5 w-5" /> Registra il pagamento</>}
+          {attesa ? <Spinner /> : <><IconCheck className="h-5 w-5" /> Registrar el pago</>}
         </Button>
       </div>
     </Sheet>
@@ -250,34 +250,34 @@ function FormModifica({ open, onClose, worker }: { open: boolean; onClose: () =>
     setErrore(''); setAttesa(true)
     try {
       const t = Number(String(tariffa).replace(',', '.'))
-      if (nome.trim().length < 2) throw new Error('Il nome non può essere vuoto.')
-      if (!Number.isFinite(t) || t <= 0) throw new Error('Inserisci una tariffa oraria valida.')
+      if (nome.trim().length < 2) throw new Error('El nombre no puede estar vacío.')
+      if (!Number.isFinite(t) || t <= 0) throw new Error('Pon una tarifa por hora válida.')
       await db.updateWorker(worker.id, { name: nome.trim(), hourly_rate: t })
       refresh(); onClose()
     } catch (err) {
-      setErrore(err instanceof Error ? err.message : 'Non sono riuscito a salvare.')
+      setErrore(err instanceof Error ? err.message : 'No he podido guardar.')
     } finally { setAttesa(false) }
   }
 
   async function elimina() {
-    if (!confirm(`Eliminare ${worker.name} con tutte le ore e i pagamenti? L’operazione non si può annullare.`)) return
+    if (!confirm(`¿Eliminar a ${worker.name} con todas sus horas y pagos? Esto no se puede deshacer.`)) return
     await db.deleteWorker(worker.id)
     refresh(); onClose(); nav('/')
   }
 
   return (
-    <Sheet open={open} onClose={onClose} title="Modifica lavoratore">
+    <Sheet open={open} onClose={onClose} title="Editar trabajador">
       <div className="space-y-4">
-        <Field label="Nome e cognome">
+        <Field label="Nombre y apellidos">
           <input className={inputCls} value={nome} onChange={e => setNome(e.target.value)} />
         </Field>
-        <Field label="Tariffa oraria (€)" hint="Le giornate già registrate mantengono la tariffa di quel momento.">
+        <Field label="Tarifa por hora (€)" hint="Las jornadas ya registradas mantienen la tarifa de aquel momento.">
           <input className={inputCls} value={tariffa} onChange={e => setTariffa(e.target.value)} inputMode="decimal" />
         </Field>
         <Errore>{errore}</Errore>
-        <Button size="lg" full onClick={salva} disabled={attesa}>{attesa ? <Spinner /> : 'Salva modifiche'}</Button>
+        <Button size="lg" full onClick={salva} disabled={attesa}>{attesa ? <Spinner /> : 'Guardar cambios'}</Button>
         <Button variant="danger" full onClick={elimina}>
-          <IconTrash className="h-4 w-4" /> Elimina lavoratore
+          <IconTrash className="h-4 w-4" /> Eliminar trabajador
         </Button>
       </div>
     </Sheet>
@@ -296,17 +296,17 @@ function FormAccesso({ open, onClose, worker }: { open: boolean; onClose: () => 
   const [fatto, setFatto] = useState(false)
   const [esito, setEsito] = useState<'copiato' | 'errore' | null>(null)
 
-  const messaggio = `Ciao ${worker.name.split(' ')[0]}, ecco il tuo accesso all'app "Ore & Paghe":\n\n${window.location.origin}${import.meta.env.BASE_URL}\n\nNome utente: ${utente}\nPassword: ${password}\n\nOgni sera, a fine giornata, apri l'app e registra le ore che hai fatto. Si può fare solo lo stesso giorno: il giorno dopo non si può più.`
+  const messaggio = `Hola ${worker.name.split(' ')[0]}, este es tu acceso a la app "Horas y Pagos":\n\n${window.location.origin}${import.meta.env.BASE_URL}\n\nUsuario: ${utente}\nContraseña: ${password}\n\nCada tarde, al terminar la jornada, abre la app y registra las horas que has hecho. Solo se puede el mismo día: al día siguiente ya no se puede.`
 
   async function crea() {
     setErrore(''); setAttesa(true)
     try {
-      if (!/^[a-z0-9._@-]{3,}$/i.test(utente.trim())) throw new Error('Il nome utente deve avere almeno 3 caratteri, senza spazi.')
-      if (password.length < 6) throw new Error('La password deve avere almeno 6 caratteri.')
+      if (!/^[a-z0-9._@-]{3,}$/i.test(utente.trim())) throw new Error('El usuario debe tener al menos 3 caracteres, sin espacios.')
+      if (password.length < 6) throw new Error('La contraseña debe tener al menos 6 caracteres.')
       await db.createWorkerAccount(worker.id, utente.trim(), password)
       refresh(); setFatto(true)
     } catch (err) {
-      setErrore(err instanceof Error ? err.message : 'Non sono riuscito a creare l’accesso.')
+      setErrore(err instanceof Error ? err.message : 'No he podido crear el acceso.')
     } finally { setAttesa(false) }
   }
 
@@ -323,94 +323,94 @@ function FormAccesso({ open, onClose, worker }: { open: boolean; onClose: () => 
 
   if (worker.user_id && !fatto) {
     return (
-      <Sheet open={open} onClose={onClose} title="Accesso del lavoratore">
+      <Sheet open={open} onClose={onClose} title="Acceso del trabajador">
         <div className="space-y-4">
           <div className="flex items-center gap-3 rounded-2xl bg-emerald-50 px-4 py-4 text-emerald-700">
             <IconCheck className="h-5 w-5" />
-            <p className="text-[14px] font-semibold">L’accesso è già attivo.</p>
+            <p className="text-[14px] font-semibold">El acceso ya está activo.</p>
           </div>
           <p className="text-[14px] leading-relaxed text-ink-500">
-            {worker.name.split(' ')[0]} può entrare nell’app con il nome utente e la password che gli hai consegnato.
-            Se le ha perse, per motivi di sicurezza la password non è visibile: crea un nuovo lavoratore
-            oppure chiedi a lui di usare “password dimenticata” dal suo indirizzo email, se ne ha usato uno vero.
+            {worker.name.split(' ')[0]} entra en la app con el usuario y la contraseña que le diste.
+            Si los ha perdido, por seguridad la contraseña no se puede ver: pídeme que le borre el acceso
+            y créaselo de nuevo. Sus horas y sus pagos no se pierden.
           </p>
-          <Button full variant="ghost" onClick={onClose}>Ho capito</Button>
+          <Button full variant="ghost" onClick={onClose}>Entendido</Button>
         </div>
       </Sheet>
     )
   }
 
   return (
-    <Sheet open={open} onClose={() => { onClose(); setFatto(false) }} title={fatto ? 'Accesso creato' : 'Crea l’accesso'}>
+    <Sheet open={open} onClose={() => { onClose(); setFatto(false) }} title={fatto ? 'Acceso creado' : 'Crear el acceso'}>
       {fatto ? (
         <div className="space-y-4">
           <div className="flex items-center gap-3 rounded-2xl bg-emerald-50 px-4 py-4 text-emerald-700">
             <IconCheck className="h-5 w-5" />
-            <p className="text-[14px] font-semibold">Fatto! Ora consegna le credenziali.</p>
+            <p className="text-[14px] font-semibold">¡Listo! Ahora dale las credenciales.</p>
           </div>
           <Card className="divide-y divide-ink-100 ring-1 ring-ink-200">
             <div className="flex items-center justify-between gap-3 px-5 py-4">
-              <span className="text-[13px] text-ink-500">Nome utente</span>
+              <span className="text-[13px] text-ink-500">Usuario</span>
               <span className="select-all font-mono text-[15px] font-bold">{utente}</span>
             </div>
             <div className="flex items-center justify-between gap-3 px-5 py-4">
-              <span className="text-[13px] text-ink-500">Password</span>
+              <span className="text-[13px] text-ink-500">Contraseña</span>
               <span className="select-all font-mono text-[15px] font-bold">{password}</span>
             </div>
           </Card>
           <p className="text-[13px] leading-relaxed text-ink-500">
-            Salva o invia subito questi dati: la password non sarà più visibile.
-            Puoi anche tenerli premuti qui sopra per selezionarli a mano.
+            Guarda o envía ya estos datos: la contraseña no se volverá a ver.
+            También puedes mantenerlos pulsados aquí arriba para seleccionarlos a mano.
           </p>
 
           <Button size="lg" full onClick={() => apriWhatsApp(messaggio)}>
-            <IconShare className="h-5 w-5" /> Invia su WhatsApp
+            <IconShare className="h-5 w-5" /> Enviar por WhatsApp
           </Button>
 
           <div className="grid grid-cols-2 gap-2.5">
             <Button variant="ghost" onClick={copia}>
-              <IconCopy className="h-4 w-4" /> Copia
+              <IconCopy className="h-4 w-4" /> Copiar
             </Button>
             <Button variant="ghost" onClick={condividi}>
-              <IconShare className="h-4 w-4" /> Altro…
+              <IconShare className="h-4 w-4" /> Otro…
             </Button>
           </div>
 
           {esito === 'copiato' && (
             <p className="animate-pop rounded-2xl bg-emerald-50 px-4 py-3 text-center text-[14px] font-semibold text-emerald-700">
-              Copiato! Ora incollalo dove vuoi.
+              ¡Copiado! Ya puedes pegarlo donde quieras.
             </p>
           )}
           {esito === 'errore' && (
             <p className="animate-pop rounded-2xl bg-amber-50 px-4 py-3 text-[14px] font-medium text-amber-800">
-              Il browser non mi ha lasciato copiare. Seleziona nome utente e password qui sopra e copiali a mano.
+              El navegador no me ha dejado copiar. Selecciona el usuario y la contraseña de arriba y cópialos a mano.
             </p>
           )}
 
-          <Button variant="ghost" full onClick={() => { onClose(); setFatto(false) }}>Chiudi</Button>
+          <Button variant="ghost" full onClick={() => { onClose(); setFatto(false) }}>Cerrar</Button>
         </div>
       ) : (
         <div className="space-y-4">
           <p className="text-[14px] leading-relaxed text-ink-500">
-            Scegli tu le credenziali di {worker.name.split(' ')[0]} e poi gliele consegni.
-            Può essere un nome semplice, non serve un’email.
+            Elige tú las credenciales de {worker.name.split(' ')[0]} y luego se las das.
+            Puede ser un nombre sencillo, no hace falta un correo.
           </p>
-          <Field label="Nome utente" hint={utente ? `Entrerà scrivendo “${utente}”.` : undefined}>
+          <Field label="Usuario" hint={utente ? `Entrará escribiendo “${utente}”.` : undefined}>
             <input className={inputCls} value={utente} onChange={e => setUtente(e.target.value.toLowerCase())}
                    autoCapitalize="none" autoCorrect="off" spellCheck={false} placeholder="carlo" />
           </Field>
-          <Field label="Password" hint="Almeno 6 caratteri. Scrivila da qualche parte prima di continuare.">
+          <Field label="Contraseña" hint="Al menos 6 caracteres. Apúntala en algún sitio antes de seguir.">
             <div className="flex gap-2">
-              <input className={inputCls} value={password} onChange={e => setPassword(e.target.value)} placeholder="es. carlo2026" />
-              <Button variant="ghost" onClick={() => setPassword(generaPassword())}>Genera</Button>
+              <input className={inputCls} value={password} onChange={e => setPassword(e.target.value)} placeholder="ej. carlos2026" />
+              <Button variant="ghost" onClick={() => setPassword(generaPassword())}>Generar</Button>
             </div>
           </Field>
           <Errore>{errore}</Errore>
           <Button size="lg" full onClick={crea} disabled={attesa || !utente || !password}>
-            {attesa ? <Spinner /> : <><IconKey className="h-5 w-5" /> Crea l’accesso</>}
+            {attesa ? <Spinner /> : <><IconKey className="h-5 w-5" /> Crear el acceso</>}
           </Button>
           <p className="text-center text-[12px] text-ink-400">
-            Entrerà come <b>{normalizzaLogin(utente) || '—'}</b>
+            Entrará como <b>{normalizzaLogin(utente) || '—'}</b>
           </p>
         </div>
       )}
@@ -419,10 +419,10 @@ function FormAccesso({ open, onClose, worker }: { open: boolean; onClose: () => 
 }
 
 function generaPassword(): string {
-  const parole = ['sole', 'mare', 'luna', 'pane', 'vento', 'porta', 'lampo', 'fiore']
+  const palabras = ['sol', 'mar', 'luna', 'pan', 'viento', 'puerta', 'rayo', 'flor']
   const buf = new Uint32Array(2)
   crypto.getRandomValues(buf)
-  return `${parole[buf[0] % parole.length]}${1000 + (buf[1] % 9000)}`
+  return `${palabras[buf[0] % palabras.length]}${1000 + (buf[1] % 9000)}`
 }
 
 /* -------------------------------------------------------------- giornata */
@@ -446,7 +446,7 @@ function FormGiornata({ open, onClose, worker }: { open: boolean; onClose: () =>
   async function salva() {
     setErrore(''); setAttesa(true)
     try {
-      if (ore <= 0) throw new Error('Controlla gli orari: il turno risulta di zero ore.')
+      if (ore <= 0) throw new Error('Revisa las horas: el turno sale de cero horas.')
       await db.addEntry({
         worker_id: worker.id, work_date: data,
         start_time: entrata, end_time: uscita, break_minutes: pausa,
@@ -456,28 +456,28 @@ function FormGiornata({ open, onClose, worker }: { open: boolean; onClose: () =>
       onClose()
       setData(todayISO())
     } catch (err) {
-      setErrore(err instanceof Error ? err.message : 'Non sono riuscito a salvare.')
+      setErrore(err instanceof Error ? err.message : 'No he podido guardar.')
     } finally { setAttesa(false) }
   }
 
   return (
-    <Sheet open={open} onClose={onClose} title={`Giornata di ${worker.name.split(' ')[0]}`}>
+    <Sheet open={open} onClose={onClose} title={`Jornada de ${worker.name.split(' ')[0]}`}>
       <div className="space-y-4">
-        <Field label="Giorno lavorato">
+        <Field label="Día trabajado">
           <input type="date" className={inputCls} value={data} max={todayISO()}
                  onChange={e => e.target.value && setData(e.target.value)} />
         </Field>
 
         <div className="grid grid-cols-2 gap-3">
-          <Field label="Entrata">
+          <Field label="Entrada">
             <input type="time" className={inputCls} value={entrata} onChange={e => setEntrata(e.target.value)} />
           </Field>
-          <Field label="Uscita">
+          <Field label="Salida">
             <input type="time" className={inputCls} value={uscita} onChange={e => setUscita(e.target.value)} />
           </Field>
         </div>
 
-        <Field label="Pausa">
+        <Field label="Descanso">
           <div className="grid grid-cols-4 gap-2">
             {[0, 30, 60, 90].map(m => (
               <button key={m} onClick={() => setPausa(m)}
@@ -490,18 +490,18 @@ function FormGiornata({ open, onClose, worker }: { open: boolean; onClose: () =>
         </Field>
 
         <div className="rounded-2xl bg-ink-900 px-5 py-4 text-center text-white">
-          <p className="text-[12px] capitalize text-white/60">{dataLunga(data)}</p>
+          <p className="text-[12px] text-white/60">{maiuscola(dataLunga(data))}</p>
           <p className="mt-1 text-[28px] font-extrabold leading-none">{oreLabel(ore)}</p>
           <p className="mt-1 text-[14px] font-semibold text-emerald-300">{euro(guadagno)}</p>
         </div>
 
         <p className="text-[12px] leading-relaxed text-ink-400">
-          Viene applicata la tariffa attuale di {euro(worker.hourly_rate)}/h.
+          Se aplica la tarifa actual de {euro(worker.hourly_rate)}/h.
         </p>
 
         <Errore>{errore}</Errore>
         <Button size="lg" full onClick={salva} disabled={attesa || ore <= 0}>
-          {attesa ? <Spinner /> : <><IconCheck className="h-5 w-5" /> Aggiungi la giornata</>}
+          {attesa ? <Spinner /> : <><IconCheck className="h-5 w-5" /> Añadir la jornada</>}
         </Button>
       </div>
     </Sheet>

@@ -1,4 +1,4 @@
-const KEY = 'ore-paghe-visto'
+const KEY = 'horas-pagos-visto'
 
 export function ultimaVisita(): string {
   return localStorage.getItem(KEY) ?? new Date(Date.now() - 7 * 864e5).toISOString()

@@ -23,11 +23,11 @@ export function SceltaOrario({ valore, onChange, etichetta }: {
       <p className="mb-4 text-center text-[13px] font-semibold text-ink-500">{etichetta}</p>
 
       <div className="flex items-center justify-center gap-3">
-        <Passo segno="−" onClick={() => set(ora - 1, min)} aria="Un'ora in meno" />
+        <Passo segno="−" onClick={() => set(ora - 1, min)} aria="Una hora menos" />
         <p className="min-w-[150px] text-center text-[54px] font-extrabold leading-none tracking-tight tabular-nums text-ink-900">
           {p2(ora)}:{p2(min)}
         </p>
-        <Passo segno="+" onClick={() => set(ora + 1, min)} aria="Un'ora in più" />
+        <Passo segno="+" onClick={() => set(ora + 1, min)} aria="Una hora más" />
       </div>
 
       <div className="mt-5 grid grid-cols-4 gap-2">
@@ -43,7 +43,7 @@ export function SceltaOrario({ valore, onChange, etichetta }: {
           </button>
         ))}
       </div>
-      <p className="mt-3 text-center text-[12px] text-ink-400">Tocca − e + per l’ora, i tasti sotto per i minuti</p>
+      <p className="mt-3 text-center text-[12px] text-ink-400">Toca − y + para la hora, los botones de abajo para los minutos</p>
     </Card>
   )
 }

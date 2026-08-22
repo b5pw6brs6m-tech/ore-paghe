@@ -4,7 +4,7 @@ import { Button, Card, Errore, Field, inputCls, Spinner, cx } from '../../compon
 import { SceltaOrario } from '../../components/SceltaOrario'
 import { IconCheck, IconClock, IconLeft } from '../../components/icons'
 import { calcolaOre, minutiDa, round2 } from '../../lib/calc'
-import { dataLunga, euro, oreLabel, todayISO } from '../../lib/format'
+import { dataLunga, euro, maiuscola, oreLabel, todayISO } from '../../lib/format'
 import { db } from '../../lib/db'
 import { useApp } from '../../context/AppContext'
 import type { Worker } from '../../lib/types'
@@ -17,7 +17,7 @@ import type { Worker } from '../../lib/types'
 
 type Passo = 0 | 1 | 2 | 3
 const PASSI = 4
-const DOMANDE = ['A che ora sei entrato?', 'A che ora sei uscito?', 'Hai fatto pausa?', 'Confermi tutto?']
+const PREGUNTAS = ['¿A qué hora entraste?', '¿A qué hora saliste?', '¿Hiciste descanso?', '¿Está todo bien?']
 
 export default function Registra({ worker }: { worker: Worker }) {
   const nav = useNavigate()
@@ -27,32 +27,27 @@ export default function Registra({ worker }: { worker: Worker }) {
   const [entrata, setEntrata] = useState('08:00')
   const [uscita, setUscita] = useState('17:00')
   const [pausa, setPausa] = useState(60)
-  const [oreDirette, setOreDirette] = useState<number | null>(null)
   const [errore, setErrore] = useState('')
   const [attesa, setAttesa] = useState(false)
 
   const oggi = todayISO()
-  const ore = useMemo(
-    () => (oreDirette !== null ? round2(oreDirette) : calcolaOre(entrata, uscita, pausa)),
-    [oreDirette, entrata, uscita, pausa],
-  )
+  const ore = useMemo(() => calcolaOre(entrata, uscita, pausa), [entrata, uscita, pausa])
   const guadagno = round2(ore * worker.hourly_rate)
 
   function avanti() {
     setErrore('')
-    if (passo === 0 && minutiDa(entrata) === null) return setErrore('Inserisci un orario di entrata valido.')
+    if (passo === 0 && minutiDa(entrata) === null) return setErrore('Pon una hora de entrada válida.')
     if (passo === 1) {
-      if (minutiDa(uscita) === null) return setErrore('Inserisci un orario di uscita valido.')
-      if (calcolaOre(entrata, uscita, 0) === 0) return setErrore('Entrata e uscita coincidono: controlla gli orari.')
+      if (minutiDa(uscita) === null) return setErrore('Pon una hora de salida válida.')
+      if (calcolaOre(entrata, uscita, 0) === 0) return setErrore('La entrada y la salida coinciden: revisa las horas.')
     }
-    if (passo === 2 && ore <= 0) return setErrore('La pausa è più lunga del turno: controlla i dati.')
+    if (passo === 2 && ore <= 0) return setErrore('El descanso dura más que el turno: revisa los datos.')
     setPasso(p => Math.min(PASSI - 1, p + 1) as Passo)
   }
 
   function indietro() {
     setErrore('')
     if (passo === 0) { nav('/'); return }
-    if (oreDirette !== null && passo === 3) { setPasso(0); setOreDirette(null); return }
     setPasso(p => Math.max(0, p - 1) as Passo)
   }
 
@@ -62,9 +57,9 @@ export default function Registra({ worker }: { worker: Worker }) {
       await db.addEntry({
         worker_id: worker.id,
         work_date: todayISO(),                    // ricalcolata al momento del salvataggio
-        start_time: oreDirette === null ? entrata : null,
-        end_time: oreDirette === null ? uscita : null,
-        break_minutes: oreDirette === null ? pausa : 0,
+        start_time: entrata,
+        end_time: uscita,
+        break_minutes: pausa,
         hours: ore,
         note: null,
       })
@@ -73,8 +68,8 @@ export default function Registra({ worker }: { worker: Worker }) {
     } catch (err) {
       const m = err instanceof Error ? err.message : ''
       setErrore(/row-level security|violates|42501/i.test(m)
-        ? 'Puoi registrare solo la giornata di oggi. Se è passata la mezzanotte, chiedi al titolare di inserirla lui.'
-        : m || 'Non sono riuscito a salvare.')
+        ? 'Solo puedes registrar la jornada de hoy. Si ya ha pasado la medianoche, pídele al jefe que la meta él.'
+        : m || 'No he podido guardar.')
       setAttesa(false)
     }
   }
@@ -85,13 +80,13 @@ export default function Registra({ worker }: { worker: Worker }) {
 
         <header className="bg-gradient-to-br from-brand-700 to-brand-500 px-5 pb-8 pt-4 text-white safe-top">
           <div className="flex items-center gap-3 pt-3">
-            <button onClick={indietro} aria-label="Indietro"
+            <button onClick={indietro} aria-label="Atrás"
                     className="rounded-full bg-white/15 p-2.5 active:scale-90 transition">
               <IconLeft className="h-5 w-5" />
             </button>
             <div className="flex-1">
               <p className="text-[12px] font-semibold uppercase tracking-wide text-white/60">
-                Passo {passo + 1} di {PASSI}
+                Paso {passo + 1} de {PASSI}
               </p>
               <p className="text-[15px] font-bold">{worker.name}</p>
             </div>
@@ -106,35 +101,29 @@ export default function Registra({ worker }: { worker: Worker }) {
 
           <div className="mt-5 inline-flex items-center gap-2 rounded-full bg-white/15 px-3.5 py-1.5">
             <IconClock className="h-4 w-4" />
-            <span className="text-[13px] font-semibold capitalize">Oggi · {dataLunga(oggi)}</span>
+            <span className="text-[13px] font-semibold">Hoy · {dataLunga(oggi)}</span>
           </div>
 
-          <h1 className="mt-4 text-[27px] font-extrabold leading-tight tracking-tight">{DOMANDE[passo]}</h1>
+          <h1 className="mt-4 text-[27px] font-extrabold leading-tight tracking-tight">{PREGUNTAS[passo]}</h1>
         </header>
 
         <div key={passo} className="animate-rise space-y-4 px-5 pt-6 pb-40">
 
           {passo === 0 && (
             <>
-              <SceltaOrario valore={entrata} onChange={setEntrata} etichetta="Orario di entrata" />
+              <SceltaOrario valore={entrata} onChange={setEntrata} etichetta="Hora de entrada" />
               <Presets valori={['06:00', '07:00', '08:00', '09:00', '14:00', '15:00']} attivo={entrata} onPick={setEntrata} />
-              <button
-                onClick={() => { setOreDirette(8); setPasso(3) }}
-                className="w-full rounded-2xl bg-white px-4 py-3.5 text-[14px] font-semibold text-brand-700 ring-1 ring-ink-200 active:scale-[.98] transition"
-              >
-                Non ricordo gli orari → inserisco solo le ore totali
-              </button>
             </>
           )}
 
           {passo === 1 && (
             <>
-              <SceltaOrario valore={uscita} onChange={setUscita} etichetta="Orario di uscita" />
+              <SceltaOrario valore={uscita} onChange={setUscita} etichetta="Hora de salida" />
               <Presets valori={['12:00', '13:00', '17:00', '18:00', '19:00', '22:00']} attivo={uscita} onPick={setUscita} />
               {calcolaOre(entrata, uscita, 0) > 0 && (
                 <div className="flex items-center gap-2.5 rounded-2xl bg-brand-50 px-4 py-3 text-[14px] font-medium text-brand-700">
                   <IconClock className="h-4 w-4" />
-                  Dalle {entrata} alle {uscita} · {oreLabel(calcolaOre(entrata, uscita, 0))} prima della pausa
+                  De {entrata} a {uscita} · {oreLabel(calcolaOre(entrata, uscita, 0))} antes del descanso
                 </div>
               )}
             </>
@@ -143,7 +132,7 @@ export default function Registra({ worker }: { worker: Worker }) {
           {passo === 2 && (
             <>
               <div className="grid grid-cols-2 gap-3">
-                {[[0, 'Nessuna pausa'], [30, '30 minuti'], [60, '1 ora'], [90, '1 ora e mezza']].map(([v, t]) => (
+                {[[0, 'Sin descanso'], [30, '30 minutos'], [60, '1 hora'], [90, 'Hora y media']].map(([v, t]) => (
                   <button key={v} onClick={() => setPausa(v as number)}
                     className={cx('rounded-3xl px-4 py-5 text-left text-[17px] font-bold transition active:scale-[.97]',
                       pausa === v ? 'bg-brand-600 text-white shadow-lg shadow-brand-600/25'
@@ -153,7 +142,7 @@ export default function Registra({ worker }: { worker: Worker }) {
                 ))}
               </div>
               <Card className="p-5">
-                <Field label="Altra durata (minuti)">
+                <Field label="Otra duración (minutos)">
                   <input type="number" inputMode="numeric" min={0} max={480} className={inputCls} value={pausa}
                          onChange={e => setPausa(Math.max(0, Math.min(480, Number(e.target.value) || 0)))} />
                 </Field>
@@ -165,38 +154,18 @@ export default function Registra({ worker }: { worker: Worker }) {
             <>
               <Card className="overflow-hidden">
                 <div className="bg-gradient-to-br from-ink-900 to-ink-700 px-6 py-7 text-center text-white">
-                  <p className="text-[13px] font-medium capitalize text-white/60">{dataLunga(oggi)}</p>
+                  <p className="text-[13px] font-medium text-white/60">{maiuscola(dataLunga(oggi))}</p>
                   <p className="mt-2 text-[44px] font-extrabold leading-none tracking-tight">{oreLabel(ore)}</p>
                   <p className="mt-2 text-[15px] font-semibold text-emerald-300">{euro(guadagno)}</p>
                 </div>
                 <dl className="divide-y divide-ink-100 px-6 py-2">
-                  {oreDirette === null ? (
-                    <>
-                      <Riga t="Entrata" v={entrata} />
-                      <Riga t="Uscita" v={uscita} />
-                      <Riga t="Pausa" v={pausa === 0 ? 'nessuna' : `${pausa} min`} />
-                    </>
-                  ) : (
-                    <Riga t="Ore inserite a mano" v={oreLabel(ore)} />
-                  )}
-                  <Riga t="Tariffa oraria" v={`${euro(worker.hourly_rate)}/h`} />
+                  <Riga t="Entrada" v={entrata} />
+                  <Riga t="Salida" v={uscita} />
+                  <Riga t="Descanso" v={pausa === 0 ? 'ninguno' : `${pausa} min`} />
+                  <Riga t="Tarifa por hora" v={`${euro(worker.hourly_rate)}/h`} />
                 </dl>
               </Card>
 
-              {oreDirette !== null && (
-                <Card className="p-5">
-                  <Field label="Ore lavorate">
-                    <div className="flex items-center gap-3">
-                      <Button variant="ghost" onClick={() => setOreDirette(Math.max(0.5, round2((oreDirette ?? 0) - 0.5)))}>−30m</Button>
-                      <input type="number" step="0.5" min="0.5" max="24" inputMode="decimal"
-                             className={`${inputCls} text-center text-[22px] font-bold`}
-                             value={oreDirette}
-                             onChange={e => setOreDirette(Math.max(0, Math.min(24, Number(e.target.value) || 0)))} />
-                      <Button variant="ghost" onClick={() => setOreDirette(Math.min(24, round2((oreDirette ?? 0) + 0.5)))}>+30m</Button>
-                    </div>
-                  </Field>
-                </Card>
-              )}
             </>
           )}
 
@@ -207,17 +176,17 @@ export default function Registra({ worker }: { worker: Worker }) {
           <div className="mx-auto max-w-[480px] border-t border-ink-200/60 bg-white/92 px-5 py-4 backdrop-blur-xl">
             {passo < 3 ? (
               <Button size="lg" full onClick={avanti}>
-                Avanti
+                Siguiente
                 <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth={2}
                      strokeLinecap="round" strokeLinejoin="round"><path d="M9 6l6 6-6 6" /></svg>
               </Button>
             ) : (
               <>
                 <p className="mb-3 text-center text-[13px] text-ink-500">
-                  Controlla i dati: dopo la conferma il titolare li vedrà subito.
+                  Revisa los datos: al confirmar, el jefe los verá al momento.
                 </p>
                 <Button size="lg" full variant="success" onClick={conferma} disabled={attesa || ore <= 0}>
-                  {attesa ? <Spinner /> : <><IconCheck className="h-5 w-5" /> Confermo, salva</>}
+                  {attesa ? <Spinner /> : <><IconCheck className="h-5 w-5" /> Confirmo, guardar</>}
                 </Button>
               </>
             )}

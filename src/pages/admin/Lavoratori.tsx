@@ -36,7 +36,7 @@ export default function AdminLavoratori() {
       if (conosciute.current.has(e.id)) continue
       conosciute.current.add(e.id)
       const w = workers.find(x => x.id === e.worker_id)
-      if (w) avvisa('Nuove ore registrate', `${w.name}: ${oreLabel(e.hours)} il ${dataBreve(e.work_date)}`)
+      if (w) avvisa('Horas nuevas registradas', `${w.name}: ${oreLabel(e.hours)} el ${dataBreve(e.work_date)}`)
     }
   }, [entries, workers, c2])
 
@@ -52,26 +52,26 @@ export default function AdminLavoratori() {
   return (
     <>
       <Header
-        occhiello="Area titolare"
-        titolo={(user?.fullName || 'Ciao').split(' ')[0]}
+        occhiello="Área del jefe"
+        titolo={(user?.fullName || 'Hola').split(' ')[0]}
         azione={
-          <button onClick={() => void signOut()} aria-label="Esci"
+          <button onClick={() => void signOut()} aria-label="Salir"
                   className="rounded-full bg-white/15 p-2.5 active:scale-90 transition">
             <IconLogout className="h-5 w-5" />
           </button>
         }
       >
         <div className="mt-6 rounded-[26px] bg-white/12 p-5 ring-1 ring-white/20 backdrop-blur">
-          <p className="text-[13px] font-medium text-white/70">Totale da pagare</p>
+          <p className="text-[13px] font-medium text-white/70">Total por pagar</p>
           <p className="mt-1 text-[42px] font-extrabold leading-none tracking-tight">{euro(daPagare)}</p>
           <div className="mt-4 grid grid-cols-2 gap-2 border-t border-white/20 pt-4 text-center">
             <div>
               <p className="text-[16px] font-bold leading-tight">{workers.length}</p>
-              <p className="text-[11px] text-white/60">{workers.length === 1 ? 'lavoratore' : 'lavoratori'}</p>
+              <p className="text-[11px] text-white/60">{workers.length === 1 ? 'trabajador' : 'trabajadores'}</p>
             </div>
             <div>
               <p className="text-[16px] font-bold leading-tight">{oreLabel(oreTotali)}</p>
-              <p className="text-[11px] text-white/60">ore registrate</p>
+              <p className="text-[11px] text-white/60">horas registradas</p>
             </div>
           </div>
         </div>
@@ -84,14 +84,14 @@ export default function AdminLavoratori() {
               <div className="rounded-xl bg-amber-100 p-2 text-amber-600"><IconBell className="h-4 w-4" /></div>
               <div className="min-w-0 flex-1">
                 <p className="text-[14px] font-bold text-amber-900">
-                  {nuove.length === 1 ? 'Una nuova registrazione' : `${nuove.length} nuove registrazioni`}
+                  {nuove.length === 1 ? 'Un registro nuevo' : `${nuove.length} registros nuevos`}
                 </p>
                 <ul className="mt-1 space-y-0.5">
                   {nuove.slice(0, 3).map(e => {
                     const w = workers.find(x => x.id === e.worker_id)
                     return (
                       <li key={e.id} className="truncate text-[13px] text-amber-800">
-                        <span className="font-semibold">{w?.name ?? 'Lavoratore'}</span> · {oreLabel(e.hours)} · <span className="capitalize">{dataBreve(e.work_date)}</span>
+                        <span className="font-semibold">{w?.name ?? 'Trabajador'}</span> · {oreLabel(e.hours)} · {dataBreve(e.work_date)}
                       </li>
                     )
                   })}
@@ -100,7 +100,7 @@ export default function AdminLavoratori() {
                   onClick={async () => { segnaVisto(); setVisto(new Date().toISOString()); await chiediPermessoNotifiche() }}
                   className="mt-2.5 text-[13px] font-bold text-amber-700 underline underline-offset-2"
                 >
-                  Ho visto, segna come lette
+                  Ya lo he visto, marcar como leído
                 </button>
               </div>
             </div>
@@ -109,20 +109,20 @@ export default function AdminLavoratori() {
       )}
 
       <Sezione
-        titolo="I tuoi lavoratori"
+        titolo="Tus trabajadores"
         azione={
           <button onClick={() => setApriNuovo(true)}
                   className="flex items-center gap-1 rounded-xl bg-brand-50 px-3 py-1.5 text-[13px] font-bold text-brand-700 active:scale-95 transition">
-            <IconPlus className="h-4 w-4" /> Aggiungi
+            <IconPlus className="h-4 w-4" /> Añadir
           </button>
         }
       >
         {workers.length === 0 ? (
           <Vuoto
             icona={<IconUsers className="h-6 w-6" />}
-            titolo="Nessun lavoratore"
-            testo="Aggiungi il primo lavoratore con nome e tariffa oraria, poi creagli l’accesso."
-            azione={<Button variant="soft" onClick={() => setApriNuovo(true)}><IconPlus className="h-4 w-4" /> Aggiungi lavoratore</Button>}
+            titolo="Ningún trabajador"
+            testo="Añade el primer trabajador con su nombre y su tarifa por hora, y luego créale el acceso."
+            azione={<Button variant="soft" onClick={() => setApriNuovo(true)}><IconPlus className="h-4 w-4" /> Añadir trabajador</Button>}
           />
         ) : (
           <div className="space-y-2.5">
@@ -132,15 +132,15 @@ export default function AdminLavoratori() {
                 <div className="min-w-0 flex-1">
                   <p className="truncate text-[16px] font-bold text-ink-900">{w.name}</p>
                   <p className="truncate text-[13px] text-ink-500">
-                    {euro(w.hourly_rate)}/h · {oreLabel(r.totalHours)} · {r.days} gg
-                    {!w.user_id && <span className="ml-1 font-semibold text-amber-600">· accesso da creare</span>}
+                    {euro(w.hourly_rate)}/h · {oreLabel(r.totalHours)} · {r.days} días
+                    {!w.user_id && <span className="ml-1 font-semibold text-amber-600">· falta el acceso</span>}
                   </p>
                 </div>
                 <div className="text-right">
                   <p className={`text-[17px] font-extrabold ${r.balance > 0 ? 'text-brand-600' : 'text-emerald-600'}`}>
                     {euro(r.balance)}
                   </p>
-                  <p className="text-[11px] text-ink-400">{r.balance > 0 ? 'da pagare' : r.balance < 0 ? 'in anticipo' : 'in pari'}</p>
+                  <p className="text-[11px] text-ink-400">{r.balance > 0 ? 'por pagar' : r.balance < 0 ? 'por adelantado' : 'al día'}</p>
                 </div>
                 <IconRight className="h-4 w-4 text-ink-300" />
               </Card>
@@ -165,33 +165,33 @@ function NuovoLavoratore({ open, onClose }: { open: boolean; onClose: () => void
   async function salva() {
     setErrore(''); setAttesa(true)
     try {
-      if (nome.trim().length < 2) throw new Error('Scrivi il nome del lavoratore.')
+      if (nome.trim().length < 2) throw new Error('Escribe el nombre del trabajador.')
       const t = Number(String(tariffa).replace(',', '.'))
-      if (!Number.isFinite(t) || t <= 0) throw new Error('Inserisci una tariffa oraria valida.')
+      if (!Number.isFinite(t) || t <= 0) throw new Error('Pon una tarifa por hora válida.')
       const w = await db.createWorker(nome, t)
       refresh()
       setNome(''); setTariffa('')
       onClose()
       nav(`/lavoratore/${w.id}`)
     } catch (err) {
-      setErrore(err instanceof Error ? err.message : 'Non sono riuscito a salvare.')
+      setErrore(err instanceof Error ? err.message : 'No he podido guardar.')
     } finally { setAttesa(false) }
   }
 
   return (
-    <Sheet open={open} onClose={onClose} title="Nuovo lavoratore">
+    <Sheet open={open} onClose={onClose} title="Nuevo trabajador">
       <div className="space-y-4">
-        <Field label="Nome e cognome">
+        <Field label="Nombre y apellidos">
           <input className={inputCls} value={nome} onChange={e => setNome(e.target.value)}
-                 placeholder="Carlo Bianchi" autoComplete="off" />
+                 placeholder="Carlos Blanco" autoComplete="off" />
         </Field>
-        <Field label="Tariffa oraria (€)" hint="Puoi cambiarla in qualsiasi momento: le giornate già registrate restano al vecchio prezzo.">
+        <Field label="Tarifa por hora (€)" hint="Puedes cambiarla cuando quieras: las jornadas ya registradas se quedan con el precio antiguo.">
           <input className={inputCls} value={tariffa} onChange={e => setTariffa(e.target.value)}
                  type="text" inputMode="decimal" placeholder="12,00" />
         </Field>
         <Errore>{errore}</Errore>
         <Button size="lg" full onClick={salva} disabled={attesa}>
-          {attesa ? <Spinner /> : 'Aggiungi lavoratore'}
+          {attesa ? <Spinner /> : 'Añadir trabajador'}
         </Button>
       </div>
     </Sheet>

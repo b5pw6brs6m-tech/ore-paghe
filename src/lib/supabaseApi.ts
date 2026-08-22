@@ -13,18 +13,18 @@ export const supabase: SupabaseClient | null = cloudConfigurato
   : null
 
 function sb(): SupabaseClient {
-  if (!supabase) throw new Error('Supabase non configurato.')
+  if (!supabase) throw new Error('Supabase no está configurado.')
   return supabase
 }
 
 function boom(error: { message: string } | null): void {
   if (!error) return
   const m = error.message || ''
-  if (/invalid login credentials/i.test(m)) throw new Error('Credenziali non valide. Controlla nome utente e password.')
-  if (/already registered|already been registered/i.test(m)) throw new Error('Questo nome utente è già usato. Scegline un altro.')
-  if (/password should be at least/i.test(m)) throw new Error('La password deve avere almeno 6 caratteri.')
-  if (/email address .* is invalid/i.test(m)) throw new Error('Nome utente non valido: usa solo lettere e numeri, oppure una email vera.')
-  if (/rate limit|too many/i.test(m)) throw new Error('Troppi tentativi ravvicinati. Riprova fra qualche minuto.')
+  if (/invalid login credentials/i.test(m)) throw new Error('Datos incorrectos. Revisa el usuario y la contraseña.')
+  if (/already registered|already been registered/i.test(m)) throw new Error('Ese usuario ya existe. Elige otro.')
+  if (/password should be at least/i.test(m)) throw new Error('La contraseña debe tener al menos 6 caracteres.')
+  if (/email address .* is invalid/i.test(m)) throw new Error('Usuario no válido: usa solo letras y números, o un correo real.')
+  if (/rate limit|too many/i.test(m)) throw new Error('Demasiados intentos seguidos. Prueba dentro de unos minutos.')
   throw new Error(m)
 }
 
@@ -85,7 +85,7 @@ export const supabaseApi: Api = {
 
   async createWorker(name, hourlyRate) {
     const { data: u } = await sb().auth.getUser()
-    if (!u.user) throw new Error('Sessione scaduta, rientra con le tue credenziali.')
+    if (!u.user) throw new Error('La sesión ha caducado, vuelve a entrar.')
     const { data, error } = await sb()
       .from('workers')
       .insert({ admin_id: u.user.id, name: name.trim(), hourly_rate: round2(hourlyRate) })
@@ -128,7 +128,7 @@ export const supabaseApi: Api = {
     // Verifica che il collegamento sia andato a buon fine.
     const { data: check } = await sb().from('workers').select('user_id').eq('id', workerId).single()
     if (!check?.user_id) {
-      throw new Error('Non sono riuscito a collegare l’accesso. Di solito il nome utente è già usato da un altro account: provane un altro. Se il problema resta, controlla di aver eseguito lo script SQL su Supabase.')
+      throw new Error('No he podido vincular el acceso. Normalmente es porque ese usuario ya existe: prueba con otro. Si sigue fallando, revisa que el script SQL se haya ejecutado en Supabase.')
     }
   },
 

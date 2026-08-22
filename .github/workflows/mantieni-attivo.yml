@@ -1,0 +1,50 @@
+# Supabase mette in pausa i progetti gratuiti dopo 7 giorni senza traffico.
+# Questo passa a salutare il database ogni giorno, così non succede mai.
+#
+# C'è però una seconda trappola: GitHub disattiva i lavori a orario nei
+# repository fermi da 60 giorni. Per questo una volta a settimana scriviamo
+# anche la data dell'ultimo saluto, che tiene "vivo" il repository.
+
+name: Mantieni attivo il database
+
+on:
+  schedule:
+    - cron: '23 7 * * *'      # ogni giorno alle 7:23 UTC
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  saluta:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Interroga il database
+        run: |
+          CODE=$(curl -s -o /tmp/risposta -w '%{http_code}' \
+            "${{ vars.VITE_SUPABASE_URL }}/rest/v1/workers?select=id&limit=1" \
+            -H "apikey: ${{ vars.VITE_SUPABASE_ANON_KEY }}" \
+            -H "Authorization: Bearer ${{ vars.VITE_SUPABASE_ANON_KEY }}")
+          echo "Risposta del database: HTTP $CODE"
+          if [ "$CODE" != "200" ]; then
+            echo "::error::Il database non ha risposto (HTTP $CODE). Potrebbe essere in pausa: riattivalo dalla dashboard Supabase."
+            cat /tmp/risposta
+            exit 1
+          fi
+          echo "Database sveglio e raggiungibile."
+
+      - name: Una volta a settimana lascia un segno nel repository
+        run: |
+          if [ "$(date -u +%u)" != "1" ]; then
+            echo "Non è lunedì: nessun segno da lasciare."
+            exit 0
+          fi
+          date -u +"Ultimo controllo del database: %Y-%m-%d %H:%M UTC" > .github/ultimo-controllo.txt
+          git config user.name  "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add .github/ultimo-controllo.txt
+          git diff --staged --quiet && exit 0
+          git commit -m "Controllo settimanale del database [skip ci]"
+          git push

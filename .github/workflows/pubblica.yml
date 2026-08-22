@@ -3,6 +3,9 @@ name: Pubblica l'app
 on:
   push:
     branches: [main]
+    paths-ignore:
+      - '.github/ultimo-controllo.txt'   # il controllo settimanale non deve ricompilare l'app
+      - 'README.md'
   workflow_dispatch:
 
 permissions:

@@ -15,8 +15,8 @@ export default function WorkerOre({ worker }: { worker: Worker }) {
   const { dati: entries, caricando } = useCarica<Entry[]>(() => db.listEntries(worker.id), [worker.id], [])
 
   async function cancella(id: string) {
-    if (!confirm('Hai sbagliato questa giornata? Verrà cancellata.')) return
-    try { await db.deleteEntry(id); refresh() } catch (e) { alert(e instanceof Error ? e.message : 'Errore') }
+    if (!confirm('¿Borramos esta jornada?')) return
+    try { await db.deleteEntry(id); refresh() } catch (e) { alert(e instanceof Error ? e.message : 'Error') }
   }
 
   if (caricando) return <Caricamento />
@@ -25,11 +25,11 @@ export default function WorkerOre({ worker }: { worker: Worker }) {
 
   return (
     <>
-      <Header occhiello="Il tuo registro" titolo="Le mie ore">
+      <Header occhiello="Tu registro" titolo="Mis horas">
         <div className="mt-6 grid grid-cols-3 gap-3">
-          <Box v={String(r.days)} t={r.days === 1 ? 'giorno' : 'giorni'} />
-          <Box v={oreLabel(r.totalHours)} t="ore" />
-          <Box v={euro(r.totalEarned)} t="guadagnato" />
+          <Box v={String(r.days)} t={r.days === 1 ? 'día' : 'días'} />
+          <Box v={oreLabel(r.totalHours)} t="horas" />
+          <Box v={euro(r.totalEarned)} t="ganado" />
         </div>
       </Header>
 
@@ -37,14 +37,14 @@ export default function WorkerOre({ worker }: { worker: Worker }) {
         {entries.length === 0 ? (
           <Vuoto
             icona={<IconClock className="h-6 w-6" />}
-            titolo="Nessuna giornata registrata"
-            testo="Qui vedrai ogni giornata di lavoro con le ore e il guadagno."
-            azione={<Button variant="soft" onClick={() => nav('/registra')}><IconPlus className="h-4 w-4" /> Registra ore</Button>}
+            titolo="Ninguna jornada registrada"
+            testo="Aquí verás cada jornada de trabajo con las horas y lo que ganas."
+            azione={<Button variant="soft" onClick={() => nav('/registra')}><IconPlus className="h-4 w-4" /> Registrar horas</Button>}
           />
         ) : (
           <div className="space-y-7">
             <p className="rounded-2xl bg-white px-4 py-3 text-[13px] leading-relaxed text-ink-500 ring-1 ring-ink-200">
-              Hai sbagliato una giornata? Puoi cancellarla con la ✕ entro 24 ore dalla registrazione.
+              ¿Te has equivocado en una jornada? Puedes borrarla con la ✕ dentro de las 24 horas.
             </p>
             {mesi.map(([ym, righe]) => {
               const ore = round2(righe.reduce((a, e) => a + e.hours, 0))

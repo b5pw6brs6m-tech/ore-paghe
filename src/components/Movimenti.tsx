@@ -1,6 +1,6 @@
 import { Card, Vuoto } from './ui'
 import { IconChart, IconClock, IconWallet } from './icons'
-import { dataMedia, euro, oreLabel } from '../lib/format'
+import { dataMedia, euro, maiuscola, oreLabel } from '../lib/format'
 import { movimenti } from '../lib/movimenti'
 import type { Entry, Payment } from '../lib/types'
 
@@ -19,7 +19,7 @@ export function Movimenti({ entries, payments, vuotoTesto, limite }: {
   const righe = limite ? tutti.slice(0, limite) : tutti
 
   if (righe.length === 0) {
-    return <Vuoto icona={<IconChart className="h-6 w-6" />} titolo="Ancora nessun movimento" testo={vuotoTesto} />
+    return <Vuoto icona={<IconChart className="h-6 w-6" />} titolo="Todavía no hay movimientos" testo={vuotoTesto} />
   }
 
   return (
@@ -33,11 +33,11 @@ export function Movimenti({ entries, payments, vuotoTesto, limite }: {
             </div>
 
             <div className="min-w-0 flex-1">
-              <p className="truncate text-[15px] font-bold capitalize text-ink-900">{dataMedia(m.data)}</p>
+              <p className="truncate text-[15px] font-bold text-ink-900">{maiuscola(dataMedia(m.data))}</p>
               <p className="truncate text-[13px] text-ink-500">
                 {m.tipo === 'ora'
                   ? `${oreLabel(m.entry.hours)}${m.entry.start_time && m.entry.end_time ? ` · ${m.entry.start_time}–${m.entry.end_time}` : ''}`
-                  : [m.payment.method, m.payment.note].filter(Boolean).join(' · ') || 'Pagamento'}
+                  : [m.payment.method, m.payment.note].filter(Boolean).join(' · ') || 'Pago'}
               </p>
             </div>
 
@@ -45,7 +45,7 @@ export function Movimenti({ entries, payments, vuotoTesto, limite }: {
               <p className={`text-[15px] font-extrabold ${pagamento ? 'text-emerald-600' : 'text-ink-900'}`}>
                 {pagamento ? '−' : '+'}{euro(Math.abs(m.importo))}
               </p>
-              <p className="text-[11px] text-ink-400">restano {euro(m.saldoDopo)}</p>
+              <p className="text-[11px] text-ink-400">quedan {euro(m.saldoDopo)}</p>
             </div>
           </Card>
         )

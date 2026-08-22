@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { Avatar, Button, Caricamento, Card, Sheet, Vuoto } from '../../components/ui'
 import { Header } from '../../components/Shell'
 import { IconPlus, IconRight, IconWallet } from '../../components/icons'
-import { dataMedia, euro, meseLabel } from '../../lib/format'
+import { dataMedia, euro, maiuscola, meseLabel } from '../../lib/format'
 import { perMese, riepilogo, round2 } from '../../lib/calc'
 import { db } from '../../lib/db'
 import { useCarica } from '../../context/AppContext'
@@ -23,21 +23,21 @@ export default function AdminPagamenti() {
   const daPagare = round2(workers.reduce(
     (a, w) => a + riepilogo(entries.filter(e => e.worker_id === w.id), payments.filter(p => p.worker_id === w.id)).balance, 0))
   const mesi = perMese(payments)
-  const nomeDi = (id: string) => workers.find(w => w.id === id)?.name ?? 'Lavoratore'
+  const nomeDi = (id: string) => workers.find(w => w.id === id)?.name ?? 'Trabajador'
 
   const saldoDi = (w: Worker) =>
     riepilogo(entries.filter(e => e.worker_id === w.id), payments.filter(p => p.worker_id === w.id)).balance
 
   return (
     <>
-      <Header occhiello="Tutto quello che hai dato" titolo="Pagamenti">
+      <Header occhiello="Todo lo que has dado" titolo="Pagos">
         <div className="mt-6 grid grid-cols-2 gap-3">
           <div className="rounded-3xl bg-white/12 px-4 py-4 ring-1 ring-white/20 backdrop-blur">
-            <p className="text-[11px] text-white/65">Pagato in totale</p>
+            <p className="text-[11px] text-white/65">Pagado en total</p>
             <p className="mt-1 text-[22px] font-extrabold leading-none">{euro(totale)}</p>
           </div>
           <div className="rounded-3xl bg-white/12 px-4 py-4 ring-1 ring-white/20 backdrop-blur">
-            <p className="text-[11px] text-white/65">Ancora da pagare</p>
+            <p className="text-[11px] text-white/65">Todavía por pagar</p>
             <p className="mt-1 text-[22px] font-extrabold leading-none">{euro(daPagare)}</p>
           </div>
         </div>
@@ -45,7 +45,7 @@ export default function AdminPagamenti() {
 
       <div className="px-5 pt-6">
         <Button size="lg" full variant="success" onClick={() => setScelta(true)} disabled={workers.length === 0}>
-          <IconWallet className="h-5 w-5" /> Registra un pagamento
+          <IconWallet className="h-5 w-5" /> Registrar un pago
         </Button>
       </div>
 
@@ -53,10 +53,10 @@ export default function AdminPagamenti() {
         {payments.length === 0 ? (
           <Vuoto
             icona={<IconWallet className="h-6 w-6" />}
-            titolo="Nessun pagamento registrato"
-            testo="Ogni volta che dai dei soldi registralo qui: resta segnato quando, quanto e a chi."
+            titolo="Ningún pago registrado"
+            testo="Cada vez que des dinero, apúntalo aquí: queda anotado cuándo, cuánto y a quién."
             azione={workers.length > 0
-              ? <Button variant="soft" onClick={() => setScelta(true)}><IconPlus className="h-4 w-4" /> Registra il primo</Button>
+              ? <Button variant="soft" onClick={() => setScelta(true)}><IconPlus className="h-4 w-4" /> Registrar el primero</Button>
               : undefined}
           />
         ) : (
@@ -75,8 +75,8 @@ export default function AdminPagamenti() {
                       <Avatar name={nomeDi(p.worker_id)} size={42} />
                       <div className="min-w-0 flex-1">
                         <p className="truncate text-[15px] font-bold text-ink-900">{nomeDi(p.worker_id)}</p>
-                        <p className="truncate text-[13px] capitalize text-ink-500">
-                          {dataMedia(p.paid_on)}{p.method ? ` · ${p.method}` : ''}
+                        <p className="truncate text-[13px] text-ink-500">
+                          {maiuscola(dataMedia(p.paid_on))}{p.method ? ` · ${p.method}` : ''}
                         </p>
                       </div>
                       <p className="text-[17px] font-extrabold text-emerald-600">{euro(p.amount)}</p>
@@ -89,7 +89,7 @@ export default function AdminPagamenti() {
         )}
       </div>
 
-      <Sheet open={scelta} onClose={() => setScelta(false)} title="A chi hai pagato?">
+      <Sheet open={scelta} onClose={() => setScelta(false)} title="¿A quién le has pagado?">
         <div className="space-y-2.5">
           {workers.map(w => (
             <Card key={w.id} onClick={() => { setTarget(w); setScelta(false) }}
@@ -97,7 +97,7 @@ export default function AdminPagamenti() {
               <Avatar name={w.name} />
               <div className="min-w-0 flex-1">
                 <p className="truncate text-[15px] font-bold text-ink-900">{w.name}</p>
-                <p className="text-[13px] text-ink-500">gli devi {euro(saldoDi(w))}</p>
+                <p className="text-[13px] text-ink-500">le debes {euro(saldoDi(w))}</p>
               </div>
               <IconRight className="h-4 w-4 text-ink-300" />
             </Card>

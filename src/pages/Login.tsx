@@ -9,7 +9,7 @@ export default function Login() {
   const [modo, setModo] = useState<'entra' | 'registra'>('entra')
   const [login, setLogin] = useState('')
   const [password, setPassword] = useState('')
-  const [nome, setNome] = useState('')
+  const [nombre, setNombre] = useState('')
   const [errore, setErrore] = useState('')
   const [avviso, setAvviso] = useState('')
   const [attesa, setAttesa] = useState(false)
@@ -21,29 +21,29 @@ export default function Login() {
       if (modo === 'entra') {
         await db.signIn(login, password)
       } else {
-        if (nome.trim().length < 2) throw new Error('Scrivi il tuo nome.')
-        const { needsConfirm } = await db.signUpAdmin(login, password, nome)
+        if (nombre.trim().length < 2) throw new Error('Escribe tu nombre.')
+        const { needsConfirm } = await db.signUpAdmin(login, password, nombre)
         if (needsConfirm) {
-          setAvviso('Account creato. Controlla la tua email per confermarlo, poi entra.')
+          setAvviso('Cuenta creada. Confírmala desde tu correo y luego entra.')
           setModo('entra')
           return
         }
       }
       refresh()
     } catch (err) {
-      setErrore(err instanceof Error ? err.message : 'Qualcosa è andato storto.')
+      setErrore(err instanceof Error ? err.message : 'Algo ha salido mal.')
     } finally {
       setAttesa(false)
     }
   }
 
-  async function provaCome(l: string) {
+  async function probarCon(l: string) {
     setErrore(''); setAttesa(true)
     try {
       await db.signIn(l, 'demo')
       refresh()
     } catch (err) {
-      setErrore(err instanceof Error ? err.message : 'Errore')
+      setErrore(err instanceof Error ? err.message : 'Error')
     } finally { setAttesa(false) }
   }
 
@@ -55,13 +55,13 @@ export default function Login() {
           <div className="mb-4 rounded-[22px] bg-white/15 p-4 ring-1 ring-white/25 backdrop-blur">
             <IconClock className="h-9 w-9" />
           </div>
-          <h1 className="text-[30px] font-extrabold tracking-tight">Ore &amp; Paghe</h1>
-          <p className="mt-1.5 text-[15px] text-white/80">Le ore lavorate e quanto ti spetta, sempre in chiaro.</p>
+          <h1 className="text-[30px] font-extrabold tracking-tight">Horas y Pagos</h1>
+          <p className="mt-1.5 text-[15px] text-white/80">Las horas trabajadas y lo que te toca cobrar, siempre claro.</p>
         </header>
 
         <div className="animate-rise rounded-[28px] bg-white p-6 shadow-2xl">
           <div className="mb-5 flex rounded-2xl bg-ink-100 p-1">
-            {([['entra', 'Entra'], ['registra', 'Nuovo titolare']] as const).map(([k, t]) => (
+            {([['entra', 'Entrar'], ['registra', 'Soy el jefe']] as const).map(([k, t]) => (
               <button
                 key={k}
                 onClick={() => { setModo(k); setErrore(''); setAvviso('') }}
@@ -76,20 +76,20 @@ export default function Login() {
 
           <form onSubmit={invia} className="space-y-4">
             {modo === 'registra' && (
-              <Field label="Il tuo nome">
-                <input className={inputCls} value={nome} onChange={e => setNome(e.target.value)}
-                       placeholder="Mario Rossi" autoComplete="name" />
+              <Field label="Tu nombre">
+                <input className={inputCls} value={nombre} onChange={e => setNombre(e.target.value)}
+                       placeholder="Miguel García" autoComplete="name" />
               </Field>
             )}
 
-            <Field label={modo === 'entra' ? 'Nome utente o email' : 'La tua email'}>
+            <Field label={modo === 'entra' ? 'Usuario o correo' : 'Tu correo'}>
               <input className={inputCls} value={login} onChange={e => setLogin(e.target.value)}
-                     placeholder={modo === 'entra' ? 'carlo' : 'mario@email.it'}
+                     placeholder={modo === 'entra' ? 'carlos' : 'miguel@correo.es'}
                      autoCapitalize="none" autoCorrect="off" spellCheck={false}
                      autoComplete={modo === 'entra' ? 'username' : 'email'} />
             </Field>
 
-            <Field label="Password" hint={modo === 'registra' ? 'Almeno 6 caratteri.' : undefined}>
+            <Field label="Contraseña" hint={modo === 'registra' ? 'Al menos 6 caracteres.' : undefined}>
               <input className={inputCls} type="password" value={password} onChange={e => setPassword(e.target.value)}
                      placeholder="••••••" autoComplete={modo === 'entra' ? 'current-password' : 'new-password'} />
             </Field>
@@ -102,14 +102,14 @@ export default function Login() {
             )}
 
             <Button type="submit" size="lg" full disabled={attesa || !login || !password}>
-              {attesa ? <Spinner /> : modo === 'entra' ? 'Entra' : 'Crea il mio account'}
+              {attesa ? <Spinner /> : modo === 'entra' ? 'Entrar' : 'Crear mi cuenta'}
             </Button>
           </form>
 
           {modo === 'entra' && (
             <p className="mt-4 text-center text-[13px] leading-relaxed text-ink-400">
-              Sei un lavoratore? Usa il nome utente e la password
-              <br />che ti ha dato il titolare.
+              ¿Eres trabajador? Usa el usuario y la contraseña
+              <br />que te ha dado el jefe.
             </p>
           )}
         </div>
@@ -118,22 +118,22 @@ export default function Login() {
           <div className="mt-5 animate-rise rounded-3xl bg-white/12 p-5 text-white ring-1 ring-white/20 backdrop-blur">
             <div className="mb-3 flex items-center gap-2">
               <IconInfo className="h-4 w-4" />
-              <p className="text-[13px] font-bold uppercase tracking-wide">Modalità dimostrativa</p>
+              <p className="text-[13px] font-bold uppercase tracking-wide">Modo de prueba</p>
             </div>
             <p className="mb-4 text-[14px] leading-relaxed text-white/80">
-              Il cloud non è ancora collegato: i dati restano su questo dispositivo.
-              Entra con un profilo di prova per vedere come funziona.
+              La base de datos aún no está conectada: los datos se quedan en este dispositivo.
+              Entra con un perfil de prueba para ver cómo funciona.
             </p>
             <div className="grid grid-cols-2 gap-2.5">
-              <Button variant="ghost" onClick={() => provaCome('demo@ore.app')} disabled={attesa}>Sono il titolare</Button>
-              <Button variant="ghost" onClick={() => provaCome('carlo@ore.app')} disabled={attesa}>Sono Carlo</Button>
+              <Button variant="ghost" onClick={() => probarCon('demo@ore.app')} disabled={attesa}>Soy el jefe</Button>
+              <Button variant="ghost" onClick={() => probarCon('demo-carlos@ore.app')} disabled={attesa}>Soy Carlos</Button>
             </div>
           </div>
         )}
 
         <div className="flex-1" />
         <p className="py-6 text-center text-[12px] text-white/50">
-          Aggiungi l’app alla schermata Home per usarla come una vera app.
+          Añade la app a la pantalla de inicio para usarla como una app normal.
         </p>
       </div>
     </div>

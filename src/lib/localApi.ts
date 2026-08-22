@@ -8,7 +8,7 @@ import type { Entry, NewEntry, NewPayment, Payment, Worker } from './types'
  * Serve per provare l'app senza configurare nulla. In produzione si usa Supabase.
  */
 
-const KEY = 'ore-paghe-demo-v2'
+const KEY = 'horas-pagos-demo-v3'
 
 type Account = { userId: string; login: string; password: string; fullName: string; role: 'admin' | 'worker' }
 type Db = {
@@ -25,7 +25,7 @@ const now = () => new Date().toISOString()
 function seed(): Db {
   const adminId = uid()
   const db: Db = {
-    accounts: [{ userId: adminId, login: 'demo@ore.app', password: 'demo', fullName: 'Michael (Demo)', role: 'admin' }],
+    accounts: [{ userId: adminId, login: 'demo@ore.app', password: 'demo', fullName: 'Jefe (Demo)', role: 'admin' }],
     workers: [], entries: [], payments: [], sessionUserId: null,
   }
 
@@ -40,8 +40,8 @@ function seed(): Db {
     return w
   }
 
-  const carlo = crea('Carlo Bianchi', 12, 'carlo@ore.app')
-  const ana = crea('Ana Petrova', 14.5, 'ana@ore.app')
+  const carlos = crea('Carlos Blanco', 12, 'demo-carlos@ore.app')
+  const ana = crea('Ana Petrova', 14.5, 'demo-ana@ore.app')
 
   const giorniFa = (n: number) => { const d = new Date(); d.setDate(d.getDate() - n); return toISO(d) }
   const turno = (w: Worker, n: number, start: string, end: string, pausa: number) => {
@@ -52,19 +52,19 @@ function seed(): Db {
     })
   }
 
-  turno(carlo, 1, '08:00', '17:00', 60)
-  turno(carlo, 2, '08:30', '18:00', 60)
-  turno(carlo, 3, '08:00', '13:00', 0)
-  turno(carlo, 6, '09:00', '17:30', 30)
-  turno(carlo, 7, '08:00', '17:00', 60)
-  turno(carlo, 8, '08:00', '16:00', 60)
+  turno(carlos, 1, '08:00', '17:00', 60)
+  turno(carlos, 2, '08:30', '18:00', 60)
+  turno(carlos, 3, '08:00', '13:00', 0)
+  turno(carlos, 6, '09:00', '17:30', 30)
+  turno(carlos, 7, '08:00', '17:00', 60)
+  turno(carlos, 8, '08:00', '16:00', 60)
   turno(ana, 1, '14:00', '20:00', 0)
   turno(ana, 4, '09:00', '15:30', 30)
   turno(ana, 5, '09:00', '18:00', 60)
 
   db.payments.push({
-    id: uid(), worker_id: carlo.id, paid_on: giorniFa(5), amount: 200,
-    method: 'Contanti', note: 'Acconto settimana scorsa', created_at: now(),
+    id: uid(), worker_id: carlos.id, paid_on: giorniFa(5), amount: 200,
+    method: 'Contanti', note: 'Adelanto de la semana pasada', created_at: now(),
   })
 
   return db
@@ -94,7 +94,7 @@ function currentAccount(): Account | null {
 
 function requireAccount(): Account {
   const a = currentAccount()
-  if (!a) throw new Error('Sessione scaduta, rientra con le tue credenziali.')
+  if (!a) throw new Error('La sesión ha caducado, vuelve a entrar.')
   return a
 }
 
@@ -127,7 +127,7 @@ export const localApi: Api = {
     await wait()
     const l = normalizzaLogin(login)
     const acc = db.accounts.find(a => a.login === l)
-    if (!acc || acc.password !== password) throw new Error('Credenziali non valide. Controlla nome utente e password.')
+    if (!acc || acc.password !== password) throw new Error('Datos incorrectos. Revisa el usuario y la contraseña.')
     db.sessionUserId = acc.userId
     save()
   },
@@ -135,7 +135,7 @@ export const localApi: Api = {
   async signUpAdmin(email, password, fullName) {
     await wait()
     const l = normalizzaLogin(email)
-    if (db.accounts.some(a => a.login === l)) throw new Error('Esiste già un account con questa email.')
+    if (db.accounts.some(a => a.login === l)) throw new Error('Ya existe una cuenta con ese correo.')
     const acc: Account = { userId: uid(), login: l, password, fullName, role: 'admin' }
     db.accounts.push(acc)
     db.sessionUserId = acc.userId
@@ -157,7 +157,7 @@ export const localApi: Api = {
 
   async createWorker(name, hourlyRate) {
     const a = requireAccount()
-    if (a.role !== 'admin') throw new Error('Solo l’amministratore può aggiungere lavoratori.')
+    if (a.role !== 'admin') throw new Error('Solo el jefe puede añadir trabajadores.')
     const w: Worker = {
       id: uid(), admin_id: a.userId, user_id: null, name: name.trim(),
       hourly_rate: round2(hourlyRate), link_code: codiceCasuale(), active: true, created_at: now(),
@@ -169,7 +169,7 @@ export const localApi: Api = {
 
   async updateWorker(id, patch) {
     const w = db.workers.find(x => x.id === id)
-    if (!w) throw new Error('Lavoratore non trovato.')
+    if (!w) throw new Error('Trabajador no encontrado.')
     Object.assign(w, patch)
     save()
   },
@@ -184,11 +184,11 @@ export const localApi: Api = {
   async createWorkerAccount(workerId, login, password) {
     await wait()
     const a = requireAccount()
-    if (a.role !== 'admin') throw new Error('Solo l’amministratore può creare gli accessi.')
+    if (a.role !== 'admin') throw new Error('Solo el jefe puede crear los accesos.')
     const w = db.workers.find(x => x.id === workerId && x.admin_id === a.userId)
-    if (!w) throw new Error('Lavoratore non trovato.')
+    if (!w) throw new Error('Trabajador no encontrado.')
     const l = normalizzaLogin(login)
-    if (db.accounts.some(acc => acc.login === l)) throw new Error('Questo nome utente è già usato. Scegline un altro.')
+    if (db.accounts.some(acc => acc.login === l)) throw new Error('Ese usuario ya existe. Elige otro.')
     const userId = uid()
     db.accounts.push({ userId, login: l, password, fullName: w.name, role: 'worker' })
     w.user_id = userId
@@ -212,10 +212,10 @@ export const localApi: Api = {
     await wait()
     const a = requireAccount()
     const w = db.workers.find(x => x.id === e.worker_id)
-    if (!w) throw new Error('Lavoratore non trovato.')
+    if (!w) throw new Error('Trabajador no encontrado.')
     // Stessa regola del database: il lavoratore registra solo la giornata di oggi.
     if (a.role === 'worker' && e.work_date !== todayISO()) {
-      throw new Error('Puoi registrare solo la giornata di oggi.')
+      throw new Error('Solo puedes registrar la jornada de hoy.')
     }
     const row: Entry = {
       id: uid(), ...e, hours: round2(e.hours), hourly_rate: w.hourly_rate, created_at: now(),
@@ -232,7 +232,7 @@ export const localApi: Api = {
     // Il lavoratore può cancellare solo un errore appena fatto; il titolare sempre.
     if (a.role === 'worker') {
       const limite = new Date(Date.now() - 24 * 3600e3).toISOString()
-      if (e.created_at < limite) throw new Error('Puoi correggere una giornata solo entro 24 ore. Chiedi al titolare.')
+      if (e.created_at < limite) throw new Error('Solo puedes corregir una jornada dentro de las 24 horas. Pídeselo al jefe.')
     }
     db.entries = db.entries.filter(x => x.id !== id)
     save()
@@ -249,7 +249,7 @@ export const localApi: Api = {
   async addPayment(p: NewPayment) {
     await wait()
     const a = requireAccount()
-    if (a.role !== 'admin') throw new Error('Solo l’amministratore può registrare i pagamenti.')
+    if (a.role !== 'admin') throw new Error('Solo el jefe puede registrar los pagos.')
     const row: Payment = { id: uid(), ...p, amount: round2(p.amount), created_at: now() }
     db.payments.push(row)
     save()

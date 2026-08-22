@@ -63,9 +63,9 @@ export function Header({ occhiello, titolo, azione, children }: {
 
 export function saluto(): string {
   const h = new Date().getHours()
-  if (h < 13) return 'Buongiorno'
-  if (h < 18) return 'Buon pomeriggio'
-  return 'Buonasera'
+  if (h < 13) return 'Buenos días'
+  if (h < 21) return 'Buenas tardes'
+  return 'Buenas noches'
 }
 
 export function Sezione({ titolo, azione, children }: { titolo: string; azione?: ReactNode; children: ReactNode }) {

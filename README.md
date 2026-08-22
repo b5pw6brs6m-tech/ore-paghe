@@ -1,4 +1,7 @@
-# Ore & Paghe
+# Horas y Pagos
+
+> **L'app è interamente in spagnolo.** Questo file di istruzioni resta in italiano,
+> è la tua guida di riferimento.
 
 App per tenere il conto delle **ore lavorate** e di **quanto devi pagare** a ogni lavoratore.
 Funziona su iPhone e Android: si apre da un link e si aggiunge alla schermata Home come una vera app.
@@ -14,7 +17,7 @@ Adesso:
 
 | Chi | Cosa fa |
 |-----|---------|
-| **Il lavoratore** | A fine giornata apre l'app, risponde a 3 domande (entrata, uscita, pausa) e conferma. Fine. |
+| **Il lavoratore** | A fine giornata apre l'app, risponde a 3 domande (entrata, uscita, pausa) e conferma. Fine. Non può inserire le ore "a occhio": deve mettere gli orari. |
 | **Tu (titolare)** | Vedi subito le ore che arrivano, il totale che gli devi, e registri i pagamenti che fai. |
 | **L'app** | Fa i conti da sola e tiene lo **storico completo**: ogni giornata, ogni pagamento, e quanto restava da dare dopo ognuno. |
 

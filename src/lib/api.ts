@@ -38,7 +38,8 @@ export interface Api {
   deletePayment(id: string): Promise<void>
 }
 
-/** Normalizza "carlo" -> "carlo@ore.app", lascia intatte le email vere. */
+/** Normaliza "carlo" -> "carlo@ore.app"; las direcciones reales quedan tal cual.
+ *  El dominio NO se cambia: los accesos ya creados dejarían de funcionar. */
 export function normalizzaLogin(login: string): string {
   const v = login.trim().toLowerCase()
   if (!v) return v
