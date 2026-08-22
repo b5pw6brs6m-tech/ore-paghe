@@ -52,7 +52,10 @@ export default function Login() {
         </header>
 
         <div className="animate-rise rounded-[28px] bg-white p-6 shadow-2xl">
-          <h2 className="mb-5 text-center text-[17px] font-bold text-ink-900">Entra con tus datos</h2>
+          <div className="mb-6 text-center">
+            <h2 className="text-[19px] font-bold text-ink-900">Entra con tus datos</h2>
+            <p className="mt-1 text-[13px] text-ink-400">Solo tu usuario y tu contraseña.</p>
+          </div>
 
           <form onSubmit={invia} className="space-y-4">
             <Field label="Usuario">
@@ -76,15 +79,10 @@ export default function Login() {
           <button
             type="button"
             onClick={() => setRecupero(true)}
-            className="mt-4 w-full text-center text-[14px] font-semibold text-brand-600 active:opacity-60"
+            className="mt-5 w-full text-center text-[14px] font-semibold text-brand-600 active:opacity-60"
           >
             ¿Has olvidado la contraseña?
           </button>
-
-          <p className="mt-5 border-t border-ink-100 pt-4 text-center text-[13px] leading-relaxed text-ink-400">
-            Usa el usuario y la contraseña que te ha dado el jefe.
-            <br />Aquí no se crean cuentas: las crea él.
-          </p>
         </div>
 
         {isDemo && (
