@@ -21,6 +21,12 @@ Adesso:
 | **Tu (titolare)** | Vedi subito le ore che arrivano, il totale che gli devi, e registri i pagamenti che fai. |
 | **L'app** | Fa i conti da sola e tiene lo **storico completo**: ogni giornata, ogni pagamento, e quanto restava da dare dopo ognuno. |
 
+**La registrazione è chiusa.** Chi apre il link trova solo "entra": non può crearsi
+un account. Il titolare sei tu e sei uno solo; gli accessi dei lavoratori li crei
+tu dall'app. Questa regola è nel database, non nella schermata: anche chiamando
+direttamente il server, ogni registrazione che non sia un lavoratore col codice
+segreto viene rifiutata.
+
 Nessuno può barare:
 
 - il lavoratore **non può** registrare pagamenti;
@@ -104,9 +110,19 @@ totale, e lui lo vede subito nella sua area.
 - **Avvisi.** Quando arrivano ore nuove trovi il riquadro giallo "nuove registrazioni"
   nella schermata dei lavoratori, e la lista si aggiorna da sola mentre l'app è aperta.
   Le notifiche a telefono spento non ci sono: servirebbe un server dedicato.
-- **Password dimenticata.** Se un lavoratore perde la password, per sicurezza non è
+- **Se perdi TU la password.** Non puoi rifare la registrazione, è chiusa.
+  Vai su Supabase → **Authentication → Users**, apri il tuo utente e usa
+  **Send password recovery** verso il tuo indirizzo email.
+
+- **Serve un secondo titolare?** Non è previsto. Se un giorno servisse, si sospende
+  il controllo, si crea l'utente e lo si riattiva:
+  `alter table auth.users disable trigger on_auth_user_created;` … poi
+  `alter table auth.users enable trigger on_auth_user_created;`
+
+- **Password dimenticata dal lavoratore.** Per sicurezza non è
   recuperabile dall'app. Se gli hai messo una email vera può usare il recupero di
-  Supabase; altrimenti creagli un nuovo accesso.
+  Supabase; altrimenti chiedimi di cancellargli l'accesso e riacreaglielo dall'app:
+  le sue ore e i suoi pagamenti non si perdono.
 
 ---
 
