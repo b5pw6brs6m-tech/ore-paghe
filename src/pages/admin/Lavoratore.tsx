@@ -303,7 +303,7 @@ function FormAccesso({ open, onClose, worker }: { open: boolean; onClose: () => 
   const [errore, setErrore] = useState('')
   const [attesa, setAttesa] = useState(false)
   const [esito, setEsito] = useState<'copiato' | 'errore' | null>(null)
-  const [sistema, setSistema] = useState<'android' | 'iphone'>('android')
+  const [sistema, setSistema] = useState<'android' | 'iphone'>('iphone')
 
   useEffect(() => {
     if (!open) return
@@ -320,17 +320,21 @@ function FormAccesso({ open, onClose, worker }: { open: boolean; onClose: () => 
   // Le istruzioni cambiano parecchio fra i due telefoni: si manda solo quella giusta,
   // scritta passo per passo perché la possa seguire chiunque.
   const PASSI = {
-    android:
-      `- Pulsa el enlace de aquí arriba: se abre Chrome.\n` +
-      `- Arriba a la derecha hay tres puntitos (⋮). Púlsalos.\n` +
-      `- Baja y elige "Instalar aplicación" (o "Añadir a pantalla de inicio").\n` +
-      `- Pulsa "Instalar".\n` +
-      `- Ya está. Te queda el icono en el móvil, igual que WhatsApp.`,
     iphone:
-      `- Pulsa el enlace de aquí arriba. IMPORTANTE: se tiene que abrir con Safari.\n` +
-      `- Abajo del todo hay un cuadradito con una flecha hacia arriba (↑). Púlsalo.\n` +
+      `- Pulsa el enlace de aquí arriba. Se abre una ventana dentro de WhatsApp.\n` +
+      `- OJO, esto es lo importante: desde dentro de WhatsApp NO se puede instalar. ` +
+      `Abajo a la derecha hay un icono de brújula (o los tres puntitos "..."): púlsalo ` +
+      `y elige "Abrir en Safari".\n` +
+      `- Ya en Safari, abajo del todo, pulsa el cuadradito con la flecha hacia arriba (↑).\n` +
       `- Baja por la lista y elige "Añadir a pantalla de inicio".\n` +
       `- Pulsa "Añadir", arriba a la derecha.\n` +
+      `- Ya está. Te queda el icono en el móvil, igual que WhatsApp.`,
+    android:
+      `- Pulsa el enlace de aquí arriba. Si se abre dentro de WhatsApp, pulsa los tres ` +
+      `puntitos (⋮) de arriba a la derecha y elige "Abrir en el navegador" (Chrome).\n` +
+      `- Ya en Chrome, pulsa otra vez los tres puntitos (⋮) de arriba a la derecha.\n` +
+      `- Baja y elige "Instalar aplicación" (o "Añadir a pantalla de inicio").\n` +
+      `- Pulsa "Instalar".\n` +
       `- Ya está. Te queda el icono en el móvil, igual que WhatsApp.`,
   }
 
@@ -409,7 +413,7 @@ function FormAccesso({ open, onClose, worker }: { open: boolean; onClose: () => 
 
           <Field label="¿Qué móvil tiene?" hint="Le mando solo los pasos de su teléfono, para que no se líe.">
             <div className="grid grid-cols-2 gap-2">
-              {([['android', 'Android'], ['iphone', 'iPhone']] as const).map(([k, t]) => (
+              {([['iphone', 'iPhone'], ['android', 'Android']] as const).map(([k, t]) => (
                 <button key={k} onClick={() => setSistema(k)}
                   className={cx('rounded-2xl py-3 text-[15px] font-semibold transition active:scale-95',
                     sistema === k ? 'bg-brand-600 text-white' : 'bg-white text-ink-700 ring-1 ring-ink-200')}>
