@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { Button, Errore, Field, Sheet, inputCls, Spinner } from '../components/ui'
-import { IconClock, IconInfo } from '../components/icons'
+import { IconCheck, IconClock, IconInfo } from '../components/icons'
 import { db, isDemo } from '../lib/db'
 import { useApp } from '../context/AppContext'
 
@@ -44,10 +44,18 @@ export default function Login() {
       <div className="mx-auto flex min-h-screen max-w-[480px] flex-col px-5 safe-top safe-bottom">
 
         <header className="flex flex-col items-center pt-16 pb-8 text-center text-white">
-          <div className="mb-4 rounded-[22px] bg-white/15 p-4 ring-1 ring-white/25 backdrop-blur">
-            <IconClock className="h-9 w-9" />
+          <div className="relative mb-4">
+            <div className="rounded-[22px] bg-white/15 p-4 ring-1 ring-white/25 backdrop-blur">
+              <IconClock className="h-9 w-9" />
+            </div>
+            {/* stessa spunta verde dell'icona dell'app */}
+            <div className="absolute -bottom-1.5 -right-1.5 rounded-full bg-brand-600 p-[3px]">
+              <div className="rounded-full bg-emerald-500 p-1.5 text-white">
+                <IconCheck className="h-3.5 w-3.5" />
+              </div>
+            </div>
           </div>
-          <h1 className="text-[30px] font-extrabold tracking-tight">Horas y Pagos</h1>
+          <h1 className="text-[34px] font-extrabold tracking-tight">Al Día</h1>
           <p className="mt-1.5 text-[15px] text-white/80">Las horas trabajadas y lo que te toca cobrar, siempre claro.</p>
         </header>
 

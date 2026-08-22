@@ -303,6 +303,7 @@ function FormAccesso({ open, onClose, worker }: { open: boolean; onClose: () => 
   const [errore, setErrore] = useState('')
   const [attesa, setAttesa] = useState(false)
   const [esito, setEsito] = useState<'copiato' | 'errore' | null>(null)
+  const [sistema, setSistema] = useState<'android' | 'iphone'>('android')
 
   useEffect(() => {
     if (!open) return
@@ -315,17 +316,38 @@ function FormAccesso({ open, onClose, worker }: { open: boolean; onClose: () => 
   const usuario = worker.access_login ?? utente
   const clave = worker.access_password ?? password
   const enlace = `${window.location.origin}${import.meta.env.BASE_URL}`
+
+  // Le istruzioni cambiano parecchio fra i due telefoni: si manda solo quella giusta,
+  // scritta passo per passo perché la possa seguire chiunque.
+  const PASSI = {
+    android:
+      `- Pulsa el enlace de aquí arriba: se abre Chrome.\n` +
+      `- Arriba a la derecha hay tres puntitos (⋮). Púlsalos.\n` +
+      `- Baja y elige "Instalar aplicación" (o "Añadir a pantalla de inicio").\n` +
+      `- Pulsa "Instalar".\n` +
+      `- Ya está. Te queda el icono en el móvil, igual que WhatsApp.`,
+    iphone:
+      `- Pulsa el enlace de aquí arriba. IMPORTANTE: se tiene que abrir con Safari.\n` +
+      `- Abajo del todo hay un cuadradito con una flecha hacia arriba (↑). Púlsalo.\n` +
+      `- Baja por la lista y elige "Añadir a pantalla de inicio".\n` +
+      `- Pulsa "Añadir", arriba a la derecha.\n` +
+      `- Ya está. Te queda el icono en el móvil, igual que WhatsApp.`,
+  }
+
   const messaggio =
     `¡Hola ${worker.name.split(' ')[0]}! ¿Qué tal?\n\n` +
-    `He preparado esta aplicación para llevar el control de las horas y de los pagos, ` +
-    `así los dos sabemos siempre cómo vamos.\n\n` +
-    `Ábrela aquí:\n${enlace}\n\n` +
-    `Entra con estos datos:\n` +
+    `He preparado una aplicación para llevar el control de las horas y de los pagos, ` +
+    `así los dos sabemos siempre cómo vamos. Se llama "Al Día".\n\n` +
+    `*1) Abre este enlace*\n${enlace}\n\n` +
+    `*2) Ponla en el móvil* (es un minuto)\n${PASSI[sistema]}\n\n` +
+    `*3) Entra con estos datos*\n` +
     `Usuario: ${(vista === 'ver' ? usuario : utente).split('@')[0]}\n` +
     `Contraseña: ${vista === 'ver' ? clave : password}\n\n` +
-    `Cada tarde, al terminar la jornada, entra y apunta las horas que has hecho. ` +
-    `Solo se puede el mismo día: al día siguiente ya no se puede.\n\n` +
-    `Ahí ves siempre los días que has trabajado, lo que llevas ganado y lo que te he pagado.`
+    `*4) Cada tarde, al terminar de trabajar*\n` +
+    `Abre la app y apunta las horas que has hecho. Solo se puede el mismo día: ` +
+    `al día siguiente ya no se puede.\n\n` +
+    `Ahí ves siempre los días que has trabajado, lo que llevas ganado y lo que te he pagado. ` +
+    `Cualquier duda me dices.`
 
   async function copia() {
     const ok = await copiaTesto(messaggio)
@@ -384,6 +406,18 @@ function FormAccesso({ open, onClose, worker }: { open: boolean; onClose: () => 
               <span className="select-all font-mono text-[15px] font-bold">{clave}</span>
             </div>
           </Card>
+
+          <Field label="¿Qué móvil tiene?" hint="Le mando solo los pasos de su teléfono, para que no se líe.">
+            <div className="grid grid-cols-2 gap-2">
+              {([['android', 'Android'], ['iphone', 'iPhone']] as const).map(([k, t]) => (
+                <button key={k} onClick={() => setSistema(k)}
+                  className={cx('rounded-2xl py-3 text-[15px] font-semibold transition active:scale-95',
+                    sistema === k ? 'bg-brand-600 text-white' : 'bg-white text-ink-700 ring-1 ring-ink-200')}>
+                  {t}
+                </button>
+              ))}
+            </div>
+          </Field>
 
           <Button size="lg" full onClick={() => apriWhatsApp(messaggio)}>
             <IconShare className="h-5 w-5" /> Enviar por WhatsApp

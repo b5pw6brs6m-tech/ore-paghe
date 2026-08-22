@@ -15,9 +15,9 @@ export default defineConfig({
       registerType: 'autoUpdate',
       includeAssets: ['icon-192.png', 'icon-512.png', 'apple-touch-icon.png'],
       manifest: {
-        name: 'Horas y Pagos',
-        short_name: 'Horas y Pagos',
-        description: 'Registro de horas trabajadas y pagos',
+        name: 'Al Día',
+        short_name: 'Al Día',
+        description: 'Tus horas y lo que te toca cobrar, siempre al día',
         theme_color: '#0f172a',
         background_color: '#0f172a',
         display: 'standalone',

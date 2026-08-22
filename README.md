@@ -1,4 +1,4 @@
-# Horas y Pagos
+# Al Día
 
 > **L'app è interamente in spagnolo.** Questo file di istruzioni resta in italiano,
 > è la tua guida di riferimento.
@@ -110,6 +110,10 @@ totale, e lui lo vede subito nella sua area.
 - **Avvisi.** Quando arrivano ore nuove trovi il riquadro giallo "nuove registrazioni"
   nella schermata dei lavoratori, e la lista si aggiorna da sola mentre l'app è aperta.
   Le notifiche a telefono spento non ci sono: servirebbe un server dedicato.
+- **La guida per installarla è dentro il messaggio.** Quando invii le credenziali,
+  scegli prima se il lavoratore ha **Android** o **iPhone**: il messaggio conterrà
+  solo i passi del suo telefono, scritti uno per uno.
+
 - **Le credenziali dei lavoratori le rivedi quando vuoi.** Nella scheda del
   lavoratore, l'icona a forma di chiave mostra nome utente e password, con il
   tasto per rimandargliele su WhatsApp. Sono conservate in chiaro **apposta**,
