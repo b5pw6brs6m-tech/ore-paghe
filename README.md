@@ -110,7 +110,18 @@ totale, e lui lo vede subito nella sua area.
 - **Avvisi.** Quando arrivano ore nuove trovi il riquadro giallo "nuove registrazioni"
   nella schermata dei lavoratori, e la lista si aggiorna da sola mentre l'app è aperta.
   Le notifiche a telefono spento non ci sono: servirebbe un server dedicato.
-- **Se perdi TU la password.** Non puoi rifare la registrazione, è chiusa.
+- **Le credenziali dei lavoratori le rivedi quando vuoi.** Nella scheda del
+  lavoratore, l'icona a forma di chiave mostra nome utente e password, con il
+  tasto per rimandargliele su WhatsApp. Sono conservate in chiaro **apposta**,
+  perché tu possa riconsegnarle: le legge solo chi possiede la scheda, cioè tu.
+  Se un accesso è stato creato prima di questa funzione, la prima volta la app
+  ti chiede di scriverle a mano ("Apuntar las credenciales").
+
+- **Se perdi TU la password.** C'è "¿Has olvidado la contraseña?" nella schermata
+  di accesso: ti arriva un link per email e da lì scegli la password nuova.
+  Ai lavoratori invece l'app dice di chiederle a te, che le hai annotate.
+
+- **Vecchia procedura, se il recupero per email non funzionasse.** Non puoi rifare la registrazione, è chiusa.
   Vai su Supabase → **Authentication → Users**, apri il tuo utente e usa
   **Send password recovery** verso il tuo indirizzo email.
 
