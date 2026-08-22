@@ -34,6 +34,10 @@ export default defineConfig({
       workbox: {
         globPatterns: ['**/*.{js,css,html,png,svg,woff2}'],
         navigateFallback: `${BASE}index.html`,
+        // La versione nuova entra in funzione subito, senza dover chiudere l'app.
+        skipWaiting: true,
+        clientsClaim: true,
+        cleanupOutdatedCaches: true,
       },
     }),
   ],

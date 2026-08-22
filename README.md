@@ -23,7 +23,21 @@ giornata sbagliata solo entro 24 ore. Tu vedi sempre tutto.
 
 ---
 
-## 1. Provarla subito (5 minuti, senza configurare niente)
+## L'app è già online e collegata
+
+**Link:** https://b5pw6brs6m-tech.github.io/ore-paghe/
+
+Funziona da qualsiasi telefono e qualsiasi rete. È già collegata al database
+cloud (Supabase, progetto `ore-paghe`, regione Francoforte), quindi i dati sono
+condivisi fra il tuo telefono e quelli dei lavoratori.
+
+Configurazione già eseguita:
+
+- tabelle e regole di sicurezza create (`supabase/schema.sql`)
+- conferma via email disattivata, così gli accessi che crei tu funzionano subito
+- chiavi impostate come variabili del repository, la pubblicazione è automatica
+
+### Per modificare l'app
 
 ```bash
 npm install
@@ -33,54 +47,9 @@ npm install
 npm run dev
 ```
 
-Apri l'indirizzo che compare (di solito `http://localhost:5173`).
-Trovi due profili di prova: **"Sono il titolare"** e **"Sono Carlo"**.
-In questa modalità i dati restano solo su quel dispositivo: serve per capire come funziona.
+Quando salvi e fai `git push`, GitHub ricompila e ripubblica da solo sullo stesso link.
 
----
-
-## 2. Collegare il cloud (una volta sola, ~10 minuti, gratis)
-
-Serve perché i telefoni dei lavoratori e il tuo si parlino.
-
-1. Vai su **supabase.com**, crea un account gratuito e poi un nuovo progetto
-   (scegli la regione **Europe (Frankfurt)**, è la più vicina).
-2. Nel menù a sinistra apri **SQL Editor** → **New query**.
-   Apri il file [`supabase/schema.sql`](supabase/schema.sql) di questo progetto,
-   copia **tutto** il contenuto, incollalo e premi **Run**.
-   Deve comparire "Success". Questo crea le tabelle e le regole di sicurezza.
-3. Vai in **Authentication → Sign In / Providers → Email** e **disattiva
-   "Confirm email"**. Serve perché sei tu a creare gli accessi dei lavoratori:
-   se resta attivo, non riuscirebbero a entrare finché non confermano una email.
-4. Vai in **Project Settings → API** e copia i due valori:
-   - **Project URL**
-   - **anon public** key
-5. Nella cartella del progetto copia il file `.env.example` e rinominalo in `.env`,
-   poi incolla dentro i due valori.
-6. Riavvia con `npm run dev`. Il riquadro "modalità dimostrativa" sparisce:
-   ora l'app è collegata al cloud.
-
----
-
-## 3. Metterla online
-
-L'app è fatta di file statici: va bene qualsiasi hosting. Il più semplice è **Netlify**.
-
-```bash
-npm run build
-```
-
-Poi vai su **app.netlify.com/drop** e trascina dentro la cartella `dist` che si è creata.
-In pochi secondi ottieni un indirizzo tipo `https://nome-a-caso.netlify.app`: quello è il
-link da dare ai lavoratori.
-
-> **Importante:** se pubblichi così, ricordati di rifare `npm run build` e ricaricare la
-> cartella ogni volta che cambi qualcosa. Collegando invece il progetto a GitHub,
-> Netlify e Vercel si aggiornano da soli (i file `netlify.toml` e `vercel.json` sono già pronti).
-
----
-
-## 4. Installarla sul telefono
+## Installarla sul telefono
 
 **iPhone** — apri il link con **Safari** (non Chrome) → tasto Condividi (il quadrato con
 la freccia) → **Aggiungi a Home**.
@@ -91,7 +60,7 @@ Da quel momento c'è l'icona sulla schermata Home e si apre a schermo intero.
 
 ---
 
-## 5. Come si usa
+## Come si usa
 
 ### Tu, la prima volta
 1. Apri l'app → **Nuovo titolare** → nome, email e password. Questo è il tuo account.
