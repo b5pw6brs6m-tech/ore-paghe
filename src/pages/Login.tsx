@@ -4,31 +4,22 @@ import { IconClock, IconInfo } from '../components/icons'
 import { db, isDemo } from '../lib/db'
 import { useApp } from '../context/AppContext'
 
+/**
+ * Non c'è registrazione: il titolare è uno solo e gli accessi dei lavoratori
+ * li crea lui dall'app. Anche il database rifiuta ogni altra registrazione.
+ */
 export default function Login() {
   const { refresh } = useApp()
-  const [modo, setModo] = useState<'entra' | 'registra'>('entra')
   const [login, setLogin] = useState('')
   const [password, setPassword] = useState('')
-  const [nombre, setNombre] = useState('')
   const [errore, setErrore] = useState('')
-  const [avviso, setAvviso] = useState('')
   const [attesa, setAttesa] = useState(false)
 
   async function invia(e: React.FormEvent) {
     e.preventDefault()
-    setErrore(''); setAvviso(''); setAttesa(true)
+    setErrore(''); setAttesa(true)
     try {
-      if (modo === 'entra') {
-        await db.signIn(login, password)
-      } else {
-        if (nombre.trim().length < 2) throw new Error('Escribe tu nombre.')
-        const { needsConfirm } = await db.signUpAdmin(login, password, nombre)
-        if (needsConfirm) {
-          setAvviso('Cuenta creada. Confírmala desde tu correo y luego entra.')
-          setModo('entra')
-          return
-        }
-      }
+      await db.signIn(login, password)
       refresh()
     } catch (err) {
       setErrore(err instanceof Error ? err.message : 'Algo ha salido mal.')
@@ -51,7 +42,7 @@ export default function Login() {
     <div className="min-h-full bg-gradient-to-b from-brand-700 via-brand-600 to-brand-500">
       <div className="mx-auto flex min-h-screen max-w-[480px] flex-col px-5 safe-top safe-bottom">
 
-        <header className="flex flex-col items-center pt-14 pb-8 text-center text-white">
+        <header className="flex flex-col items-center pt-16 pb-8 text-center text-white">
           <div className="mb-4 rounded-[22px] bg-white/15 p-4 ring-1 ring-white/25 backdrop-blur">
             <IconClock className="h-9 w-9" />
           </div>
@@ -60,58 +51,31 @@ export default function Login() {
         </header>
 
         <div className="animate-rise rounded-[28px] bg-white p-6 shadow-2xl">
-          <div className="mb-5 flex rounded-2xl bg-ink-100 p-1">
-            {([['entra', 'Entrar'], ['registra', 'Soy el jefe']] as const).map(([k, t]) => (
-              <button
-                key={k}
-                onClick={() => { setModo(k); setErrore(''); setAvviso('') }}
-                className={`flex-1 rounded-xl py-2.5 text-[14px] font-semibold transition ${
-                  modo === k ? 'bg-white text-ink-900 shadow-sm' : 'text-ink-500'
-                }`}
-              >
-                {t}
-              </button>
-            ))}
-          </div>
+          <h2 className="mb-5 text-center text-[17px] font-bold text-ink-900">Entra con tus datos</h2>
 
           <form onSubmit={invia} className="space-y-4">
-            {modo === 'registra' && (
-              <Field label="Tu nombre">
-                <input className={inputCls} value={nombre} onChange={e => setNombre(e.target.value)}
-                       placeholder="Miguel García" autoComplete="name" />
-              </Field>
-            )}
-
-            <Field label={modo === 'entra' ? 'Usuario o correo' : 'Tu correo'}>
+            <Field label="Usuario">
               <input className={inputCls} value={login} onChange={e => setLogin(e.target.value)}
-                     placeholder={modo === 'entra' ? 'carlos' : 'miguel@correo.es'}
-                     autoCapitalize="none" autoCorrect="off" spellCheck={false}
-                     autoComplete={modo === 'entra' ? 'username' : 'email'} />
+                     placeholder="carlos"
+                     autoCapitalize="none" autoCorrect="off" spellCheck={false} autoComplete="username" />
             </Field>
 
-            <Field label="Contraseña" hint={modo === 'registra' ? 'Al menos 6 caracteres.' : undefined}>
+            <Field label="Contraseña">
               <input className={inputCls} type="password" value={password} onChange={e => setPassword(e.target.value)}
-                     placeholder="••••••" autoComplete={modo === 'entra' ? 'current-password' : 'new-password'} />
+                     placeholder="••••••" autoComplete="current-password" />
             </Field>
 
             <Errore>{errore}</Errore>
-            {avviso && (
-              <p className="rounded-2xl bg-emerald-50 px-4 py-3 text-[14px] font-medium text-emerald-700 ring-1 ring-emerald-100">
-                {avviso}
-              </p>
-            )}
 
             <Button type="submit" size="lg" full disabled={attesa || !login || !password}>
-              {attesa ? <Spinner /> : modo === 'entra' ? 'Entrar' : 'Crear mi cuenta'}
+              {attesa ? <Spinner /> : 'Entrar'}
             </Button>
           </form>
 
-          {modo === 'entra' && (
-            <p className="mt-4 text-center text-[13px] leading-relaxed text-ink-400">
-              ¿Eres trabajador? Usa el usuario y la contraseña
-              <br />que te ha dado el jefe.
-            </p>
-          )}
+          <p className="mt-5 border-t border-ink-100 pt-4 text-center text-[13px] leading-relaxed text-ink-400">
+            Usa el usuario y la contraseña que te ha dado el jefe.
+            <br />Aquí no se crean cuentas: las crea él.
+          </p>
         </div>
 
         {isDemo && (

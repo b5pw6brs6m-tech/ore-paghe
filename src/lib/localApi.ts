@@ -134,6 +134,10 @@ export const localApi: Api = {
 
   async signUpAdmin(email, password, fullName) {
     await wait()
+    // Un solo titolare: come nel database, dopo il primo la registrazione è chiusa.
+    if (db.accounts.some(a => a.role === 'admin')) {
+      throw new Error('Aquí no se crean cuentas: los accesos los crea el jefe desde la app.')
+    }
     const l = normalizzaLogin(email)
     if (db.accounts.some(a => a.login === l)) throw new Error('Ya existe una cuenta con ese correo.')
     const acc: Account = { userId: uid(), login: l, password, fullName, role: 'admin' }

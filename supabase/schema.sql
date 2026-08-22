@@ -69,39 +69,68 @@ create trigger trg_congela_tariffa
 before insert on public.work_entries
 for each row execute function public.congela_tariffa();
 
--- ------------------------------------------ 3. Nuovo utente: profilo e link
--- Quando il titolare crea l'accesso di un lavoratore, la registrazione porta
--- con sé il codice segreto del lavoratore: solo con quello l'account viene
--- collegato alla scheda giusta, e solo se non è già collegato a nessuno.
+-- ---------------------------------------- 3. Chi può creare un account
+-- La registrazione pubblica è CHIUSA. Si entra solo in due modi:
+--   - il titolare: uno solo, il primo che si è registrato;
+--   - il lavoratore: con il codice segreto che gli genera il titolare.
+-- Ogni altro tentativo viene rifiutato qui, non solo nella schermata.
+--
+-- Se un giorno serve creare un utente a mano dalla dashboard, si sospende
+-- il controllo e poi lo si riattiva:
+--   alter table auth.users disable trigger on_auth_user_created;
+--   ...crea l'utente...
+--   alter table auth.users enable  trigger on_auth_user_created;
 
 create or replace function public.gestisci_nuovo_utente()
 returns trigger language plpgsql security definer set search_path = public as $$
 declare
-  meta  jsonb := coalesce(new.raw_user_meta_data, '{}'::jsonb);
-  ruolo text  := coalesce(meta->>'role', 'worker');
-  wid   uuid;
+  meta      jsonb := coalesce(new.raw_user_meta_data, '{}'::jsonb);
+  ruolo     text  := coalesce(meta->>'role', 'worker');
+  wid       uuid;
+  collegati int;
 begin
-  if ruolo not in ('admin', 'worker') then
-    ruolo := 'worker';
+  -- ------------------------------------------------------------ titolare
+  -- Ce n'è uno solo: il primo che si registra. Dopo di lui la registrazione
+  -- è chiusa, così nessuno può crearsi un account da titolare.
+  if ruolo = 'admin' then
+    if exists (select 1 from public.profiles where role = 'admin') then
+      raise exception 'REGISTRAZIONE_CHIUSA' using errcode = 'P0001';
+    end if;
+
+    insert into public.profiles (id, full_name, role)
+    values (new.id, coalesce(meta->>'full_name', ''), 'admin')
+    on conflict (id) do nothing;
+    return new;
+  end if;
+
+  -- ---------------------------------------------------------- lavoratore
+  -- Un lavoratore non si registra da solo: il suo accesso lo crea il
+  -- titolare, e la registrazione porta con sé il codice segreto della sua
+  -- scheda. Senza quel codice non si entra.
+  if not (meta ? 'worker_id') or not (meta ? 'link_code') then
+    raise exception 'REGISTRAZIONE_CHIUSA' using errcode = 'P0001';
+  end if;
+
+  begin
+    wid := (meta->>'worker_id')::uuid;
+  exception when others then
+    raise exception 'REGISTRAZIONE_CHIUSA' using errcode = 'P0001';
+  end;
+
+  update public.workers
+     set user_id = new.id
+   where id = wid
+     and link_code = (meta->>'link_code')
+     and user_id is null;
+
+  get diagnostics collegati = row_count;
+  if collegati = 0 then
+    raise exception 'REGISTRAZIONE_CHIUSA' using errcode = 'P0001';
   end if;
 
   insert into public.profiles (id, full_name, role)
-  values (new.id, coalesce(meta->>'full_name', ''), ruolo)
+  values (new.id, coalesce(meta->>'full_name', ''), 'worker')
   on conflict (id) do nothing;
-
-  if ruolo = 'worker' and (meta ? 'worker_id') and (meta ? 'link_code') then
-    begin
-      wid := (meta->>'worker_id')::uuid;
-    exception when others then
-      return new;
-    end;
-
-    update public.workers
-       set user_id = new.id
-     where id = wid
-       and link_code = (meta->>'link_code')
-       and user_id is null;
-  end if;
 
   return new;
 end $$;
