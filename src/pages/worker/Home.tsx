@@ -77,6 +77,10 @@ export default function WorkerHome({ worker }: { worker: Worker }) {
         <Button size="lg" full onClick={() => nav('/registra')}>
           <IconPlus className="h-5 w-5" /> Registra le ore di oggi
         </Button>
+        <p className="mt-2.5 text-center text-[12px] leading-relaxed text-ink-400">
+          Si registra solo la giornata di oggi, a fine giornata.
+          <br />Domani non sarà più possibile.
+        </p>
       </div>
 
       <Sezione titolo="Il tuo conto">

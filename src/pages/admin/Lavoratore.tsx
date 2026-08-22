@@ -296,7 +296,7 @@ function FormAccesso({ open, onClose, worker }: { open: boolean; onClose: () => 
   const [fatto, setFatto] = useState(false)
   const [esito, setEsito] = useState<'copiato' | 'errore' | null>(null)
 
-  const messaggio = `Ciao ${worker.name.split(' ')[0]}, ecco il tuo accesso all'app "Ore & Paghe":\n\nNome utente: ${utente}\nPassword: ${password}\n\nOgni giorno apri l'app e registra le ore che hai fatto.`
+  const messaggio = `Ciao ${worker.name.split(' ')[0]}, ecco il tuo accesso all'app "Ore & Paghe":\n\n${window.location.origin}${import.meta.env.BASE_URL}\n\nNome utente: ${utente}\nPassword: ${password}\n\nOgni sera, a fine giornata, apri l'app e registra le ore che hai fatto. Si può fare solo lo stesso giorno: il giorno dopo non si può più.`
 
   async function crea() {
     setErrore(''); setAttesa(true)
