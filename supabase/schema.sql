@@ -128,6 +128,13 @@ returns boolean language sql stable security definer set search_path = public as
   select exists (select 1 from public.workers where id = w and admin_id = auth.uid())
 $$;
 
+-- "Oggi" secondo il fuso italiano: il database gira in UTC e vicino a mezzanotte
+-- darebbe la data sbagliata.
+create or replace function public.oggi()
+returns date language sql stable as $$
+  select (now() at time zone 'Europe/Rome')::date
+$$;
+
 create or replace function public.e_lavoratore_di(w uuid)
 returns boolean language sql stable security definer set search_path = public as $$
   select exists (select 1 from public.workers where id = w and user_id = auth.uid())
@@ -154,13 +161,21 @@ create policy "lavoratori: inserisco" on public.workers for insert with check (a
 create policy "lavoratori: modifico"  on public.workers for update using (admin_id = auth.uid()) with check (admin_id = auth.uid());
 create policy "lavoratori: elimino"   on public.workers for delete using (admin_id = auth.uid());
 
-drop policy if exists "ore: lettura"                on public.work_entries;
-drop policy if exists "ore: registro le mie"        on public.work_entries;
-drop policy if exists "ore: correggo entro 24 ore"  on public.work_entries;
-drop policy if exists "ore: il titolare corregge"   on public.work_entries;
-drop policy if exists "ore: il titolare elimina"    on public.work_entries;
-create policy "ore: lettura"         on public.work_entries for select using (public.puo_vedere_worker(worker_id));
-create policy "ore: registro le mie" on public.work_entries for insert with check (public.puo_vedere_worker(worker_id));
+drop policy if exists "ore: lettura"                    on public.work_entries;
+drop policy if exists "ore: registro le mie"            on public.work_entries;
+drop policy if exists "ore: il lavoratore registra oggi" on public.work_entries;
+drop policy if exists "ore: correggo entro 24 ore"      on public.work_entries;
+drop policy if exists "ore: il titolare corregge"       on public.work_entries;
+drop policy if exists "ore: il titolare elimina"        on public.work_entries;
+create policy "ore: lettura" on public.work_entries for select using (public.puo_vedere_worker(worker_id));
+-- Il lavoratore registra SOLO la giornata di oggi: niente giorni passati, niente futuri.
+-- È il suo obbligo di fine giornata. Il titolare invece può inserire qualsiasi data,
+-- per rimediare a una giornata dimenticata.
+create policy "ore: il lavoratore registra oggi" on public.work_entries for insert
+  with check (
+    (public.e_lavoratore_di(worker_id) and work_date = public.oggi())
+    or public.e_admin_di(worker_id)
+  );
 -- Il lavoratore può cancellare solo un errore appena fatto (24 ore), non riscrivere il passato.
 create policy "ore: correggo entro 24 ore" on public.work_entries for delete
   using (public.e_lavoratore_di(worker_id) and created_at > now() - interval '24 hours');

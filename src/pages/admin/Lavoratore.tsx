@@ -2,10 +2,11 @@ import { useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { Avatar, Button, Caricamento, Card, Errore, Field, Sheet, Spinner, Vuoto, cx, inputCls } from '../../components/ui'
 import { IconCheck, IconClock, IconCopy, IconEdit, IconKey, IconLeft, IconPlus, IconShare, IconTrash, IconWallet } from '../../components/icons'
-import { euro, oreLabel, todayISO } from '../../lib/format'
-import { riepilogo } from '../../lib/calc'
+import { dataLunga, euro, oreLabel, todayISO } from '../../lib/format'
+import { calcolaOre, riepilogo, round2 } from '../../lib/calc'
 import { db } from '../../lib/db'
 import { normalizzaLogin } from '../../lib/api'
+import { apriWhatsApp, condividiNativo, copiaTesto } from '../../lib/condividi'
 import { useApp, useCarica } from '../../context/AppContext'
 import type { Entry, Payment, Worker } from '../../lib/types'
 import { RigaGiorno } from '../worker/Home'
@@ -20,6 +21,7 @@ export default function AdminLavoratore() {
   const [apriPagamento, setApriPagamento] = useState(false)
   const [apriModifica, setApriModifica] = useState(false)
   const [apriAccesso, setApriAccesso] = useState(false)
+  const [apriGiornata, setApriGiornata] = useState(false)
 
   const { dati: workers, caricando: c1 } = useCarica<Worker[]>(() => db.listWorkers(), [], [])
   const { dati: entries, caricando: c2 } = useCarica<Entry[]>(() => db.listEntries(id), [id], [])
@@ -97,9 +99,12 @@ export default function AdminLavoratore() {
         </div>
       )}
 
-      <div className="px-5 pt-5">
+      <div className="space-y-2.5 px-5 pt-5">
         <Button size="lg" full variant="success" onClick={() => setApriPagamento(true)}>
           <IconWallet className="h-5 w-5" /> Registra un pagamento
+        </Button>
+        <Button variant="ghost" full onClick={() => setApriGiornata(true)}>
+          <IconPlus className="h-4 w-4" /> Aggiungi una giornata dimenticata
         </Button>
       </div>
 
@@ -120,7 +125,8 @@ export default function AdminLavoratore() {
         ) : tab === 'ore' ? (
           entries.length === 0 ? (
             <Vuoto icona={<IconClock className="h-6 w-6" />} titolo="Nessuna giornata"
-                   testo={`${worker.name.split(' ')[0]} non ha ancora registrato ore.`} />
+                   testo={`${worker.name.split(' ')[0]} registra le sue ore a fine giornata. Se se ne dimentica una, puoi aggiungerla tu.`}
+                   azione={<Button variant="soft" onClick={() => setApriGiornata(true)}><IconPlus className="h-4 w-4" /> Aggiungi giornata</Button>} />
           ) : (
             <div className="space-y-2.5">
               {entries.map(e => <RigaGiorno key={e.id} e={e} onDelete={() => void eliminaOre(e.id)} />)}
@@ -140,6 +146,7 @@ export default function AdminLavoratore() {
       </div>
 
       <FormPagamento open={apriPagamento} onClose={() => setApriPagamento(false)} worker={worker} saldo={r.balance} />
+      <FormGiornata open={apriGiornata} onClose={() => setApriGiornata(false)} worker={worker} />
       <FormModifica open={apriModifica} onClose={() => setApriModifica(false)} worker={worker} />
       <FormAccesso open={apriAccesso} onClose={() => setApriAccesso(false)} worker={worker} />
     </>
@@ -287,7 +294,7 @@ function FormAccesso({ open, onClose, worker }: { open: boolean; onClose: () => 
   const [errore, setErrore] = useState('')
   const [attesa, setAttesa] = useState(false)
   const [fatto, setFatto] = useState(false)
-  const [copiato, setCopiato] = useState(false)
+  const [esito, setEsito] = useState<'copiato' | 'errore' | null>(null)
 
   const messaggio = `Ciao ${worker.name.split(' ')[0]}, ecco il tuo accesso all'app "Ore & Paghe":\n\nNome utente: ${utente}\nPassword: ${password}\n\nOgni giorno apri l'app e registra le ore che hai fatto.`
 
@@ -303,11 +310,15 @@ function FormAccesso({ open, onClose, worker }: { open: boolean; onClose: () => 
     } finally { setAttesa(false) }
   }
 
+  async function copia() {
+    const ok = await copiaTesto(messaggio)
+    setEsito(ok ? 'copiato' : 'errore')
+    setTimeout(() => setEsito(null), 3000)
+  }
+
   async function condividi() {
-    try {
-      if (navigator.share) await navigator.share({ text: messaggio })
-      else { await navigator.clipboard.writeText(messaggio); setCopiato(true); setTimeout(() => setCopiato(false), 2000) }
-    } catch { /* l'utente ha annullato la condivisione */ }
+    if (await condividiNativo(messaggio)) return
+    void copia()
   }
 
   if (worker.user_id && !fatto) {
@@ -338,21 +349,44 @@ function FormAccesso({ open, onClose, worker }: { open: boolean; onClose: () => 
             <p className="text-[14px] font-semibold">Fatto! Ora consegna le credenziali.</p>
           </div>
           <Card className="divide-y divide-ink-100 ring-1 ring-ink-200">
-            <div className="flex items-center justify-between px-5 py-4">
+            <div className="flex items-center justify-between gap-3 px-5 py-4">
               <span className="text-[13px] text-ink-500">Nome utente</span>
-              <span className="font-mono text-[15px] font-bold">{utente}</span>
+              <span className="select-all font-mono text-[15px] font-bold">{utente}</span>
             </div>
-            <div className="flex items-center justify-between px-5 py-4">
+            <div className="flex items-center justify-between gap-3 px-5 py-4">
               <span className="text-[13px] text-ink-500">Password</span>
-              <span className="font-mono text-[15px] font-bold">{password}</span>
+              <span className="select-all font-mono text-[15px] font-bold">{password}</span>
             </div>
           </Card>
           <p className="text-[13px] leading-relaxed text-ink-500">
             Salva o invia subito questi dati: la password non sarà più visibile.
+            Puoi anche tenerli premuti qui sopra per selezionarli a mano.
           </p>
-          <Button size="lg" full onClick={condividi}>
-            {copiato ? <><IconCopy className="h-5 w-5" /> Copiato!</> : <><IconShare className="h-5 w-5" /> Invia le credenziali</>}
+
+          <Button size="lg" full onClick={() => apriWhatsApp(messaggio)}>
+            <IconShare className="h-5 w-5" /> Invia su WhatsApp
           </Button>
+
+          <div className="grid grid-cols-2 gap-2.5">
+            <Button variant="ghost" onClick={copia}>
+              <IconCopy className="h-4 w-4" /> Copia
+            </Button>
+            <Button variant="ghost" onClick={condividi}>
+              <IconShare className="h-4 w-4" /> Altro…
+            </Button>
+          </div>
+
+          {esito === 'copiato' && (
+            <p className="animate-pop rounded-2xl bg-emerald-50 px-4 py-3 text-center text-[14px] font-semibold text-emerald-700">
+              Copiato! Ora incollalo dove vuoi.
+            </p>
+          )}
+          {esito === 'errore' && (
+            <p className="animate-pop rounded-2xl bg-amber-50 px-4 py-3 text-[14px] font-medium text-amber-800">
+              Il browser non mi ha lasciato copiare. Seleziona nome utente e password qui sopra e copiali a mano.
+            </p>
+          )}
+
           <Button variant="ghost" full onClick={() => { onClose(); setFatto(false) }}>Chiudi</Button>
         </div>
       ) : (
@@ -389,4 +423,87 @@ function generaPassword(): string {
   const buf = new Uint32Array(2)
   crypto.getRandomValues(buf)
   return `${parole[buf[0] % parole.length]}${1000 + (buf[1] % 9000)}`
+}
+
+/* -------------------------------------------------------------- giornata */
+
+/**
+ * Il lavoratore può registrare solo la giornata in corso. Se se ne dimentica
+ * una, il titolare la inserisce qui: è l'unica via per una data passata.
+ */
+function FormGiornata({ open, onClose, worker }: { open: boolean; onClose: () => void; worker: Worker }) {
+  const { refresh } = useApp()
+  const [data, setData] = useState(todayISO())
+  const [entrata, setEntrata] = useState('08:00')
+  const [uscita, setUscita] = useState('17:00')
+  const [pausa, setPausa] = useState(60)
+  const [errore, setErrore] = useState('')
+  const [attesa, setAttesa] = useState(false)
+
+  const ore = calcolaOre(entrata, uscita, pausa)
+  const guadagno = round2(ore * worker.hourly_rate)
+
+  async function salva() {
+    setErrore(''); setAttesa(true)
+    try {
+      if (ore <= 0) throw new Error('Controlla gli orari: il turno risulta di zero ore.')
+      await db.addEntry({
+        worker_id: worker.id, work_date: data,
+        start_time: entrata, end_time: uscita, break_minutes: pausa,
+        hours: ore, note: null,
+      })
+      refresh()
+      onClose()
+      setData(todayISO())
+    } catch (err) {
+      setErrore(err instanceof Error ? err.message : 'Non sono riuscito a salvare.')
+    } finally { setAttesa(false) }
+  }
+
+  return (
+    <Sheet open={open} onClose={onClose} title={`Giornata di ${worker.name.split(' ')[0]}`}>
+      <div className="space-y-4">
+        <Field label="Giorno lavorato">
+          <input type="date" className={inputCls} value={data} max={todayISO()}
+                 onChange={e => e.target.value && setData(e.target.value)} />
+        </Field>
+
+        <div className="grid grid-cols-2 gap-3">
+          <Field label="Entrata">
+            <input type="time" className={inputCls} value={entrata} onChange={e => setEntrata(e.target.value)} />
+          </Field>
+          <Field label="Uscita">
+            <input type="time" className={inputCls} value={uscita} onChange={e => setUscita(e.target.value)} />
+          </Field>
+        </div>
+
+        <Field label="Pausa">
+          <div className="grid grid-cols-4 gap-2">
+            {[0, 30, 60, 90].map(m => (
+              <button key={m} onClick={() => setPausa(m)}
+                className={cx('rounded-2xl py-3 text-[14px] font-semibold transition active:scale-95',
+                  pausa === m ? 'bg-brand-600 text-white' : 'bg-white text-ink-700 ring-1 ring-ink-200')}>
+                {m === 0 ? 'no' : `${m}m`}
+              </button>
+            ))}
+          </div>
+        </Field>
+
+        <div className="rounded-2xl bg-ink-900 px-5 py-4 text-center text-white">
+          <p className="text-[12px] capitalize text-white/60">{dataLunga(data)}</p>
+          <p className="mt-1 text-[28px] font-extrabold leading-none">{oreLabel(ore)}</p>
+          <p className="mt-1 text-[14px] font-semibold text-emerald-300">{euro(guadagno)}</p>
+        </div>
+
+        <p className="text-[12px] leading-relaxed text-ink-400">
+          Viene applicata la tariffa attuale di {euro(worker.hourly_rate)}/h.
+        </p>
+
+        <Errore>{errore}</Errore>
+        <Button size="lg" full onClick={salva} disabled={attesa || ore <= 0}>
+          {attesa ? <Spinner /> : <><IconCheck className="h-5 w-5" /> Aggiungi la giornata</>}
+        </Button>
+      </div>
+    </Sheet>
+  )
 }

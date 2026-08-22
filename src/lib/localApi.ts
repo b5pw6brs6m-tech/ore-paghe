@@ -1,6 +1,6 @@
 import { codiceCasuale, normalizzaLogin, type Api, type AppUser } from './api'
 import { calcolaOre, round2 } from './calc'
-import { toISO } from './format'
+import { todayISO, toISO } from './format'
 import type { Entry, NewEntry, NewPayment, Payment, Worker } from './types'
 
 /**
@@ -210,8 +210,13 @@ export const localApi: Api = {
 
   async addEntry(e: NewEntry) {
     await wait()
+    const a = requireAccount()
     const w = db.workers.find(x => x.id === e.worker_id)
     if (!w) throw new Error('Lavoratore non trovato.')
+    // Stessa regola del database: il lavoratore registra solo la giornata di oggi.
+    if (a.role === 'worker' && e.work_date !== todayISO()) {
+      throw new Error('Puoi registrare solo la giornata di oggi.')
+    }
     const row: Entry = {
       id: uid(), ...e, hours: round2(e.hours), hourly_rate: w.hourly_rate, created_at: now(),
     }

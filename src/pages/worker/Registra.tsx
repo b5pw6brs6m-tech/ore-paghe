@@ -2,24 +2,28 @@ import { useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Button, Card, Errore, Field, inputCls, Spinner, cx } from '../../components/ui'
 import { SceltaOrario } from '../../components/SceltaOrario'
-import { IconCalendar, IconCheck, IconClock, IconLeft } from '../../components/icons'
+import { IconCheck, IconClock, IconLeft } from '../../components/icons'
 import { calcolaOre, minutiDa, round2 } from '../../lib/calc'
-import { dataLunga, euro, oreLabel, todayISO, toISO } from '../../lib/format'
+import { dataLunga, euro, oreLabel, todayISO } from '../../lib/format'
 import { db } from '../../lib/db'
 import { useApp } from '../../context/AppContext'
 import type { Worker } from '../../lib/types'
 
-type Passo = 0 | 1 | 2 | 3 | 4
-const PASSI = 5
+/**
+ * Le ore si registrano SOLO per la giornata in corso: è l'obbligo di fine
+ * giornata del lavoratore. Non c'è scelta della data, e la stessa regola è
+ * imposta anche dal database, così non è aggirabile.
+ */
 
-const giorniFa = (n: number) => { const d = new Date(); d.setDate(d.getDate() - n); return toISO(d) }
+type Passo = 0 | 1 | 2 | 3
+const PASSI = 4
+const DOMANDE = ['A che ora sei entrato?', 'A che ora sei uscito?', 'Hai fatto pausa?', 'Confermi tutto?']
 
 export default function Registra({ worker }: { worker: Worker }) {
   const nav = useNavigate()
   const { refresh } = useApp()
 
   const [passo, setPasso] = useState<Passo>(0)
-  const [data, setData] = useState(todayISO())
   const [entrata, setEntrata] = useState('08:00')
   const [uscita, setUscita] = useState('17:00')
   const [pausa, setPausa] = useState(60)
@@ -27,6 +31,7 @@ export default function Registra({ worker }: { worker: Worker }) {
   const [errore, setErrore] = useState('')
   const [attesa, setAttesa] = useState(false)
 
+  const oggi = todayISO()
   const ore = useMemo(
     () => (oreDirette !== null ? round2(oreDirette) : calcolaOre(entrata, uscita, pausa)),
     [oreDirette, entrata, uscita, pausa],
@@ -35,19 +40,19 @@ export default function Registra({ worker }: { worker: Worker }) {
 
   function avanti() {
     setErrore('')
-    if (passo === 1 && minutiDa(entrata) === null) return setErrore('Inserisci un orario di entrata valido.')
-    if (passo === 2) {
+    if (passo === 0 && minutiDa(entrata) === null) return setErrore('Inserisci un orario di entrata valido.')
+    if (passo === 1) {
       if (minutiDa(uscita) === null) return setErrore('Inserisci un orario di uscita valido.')
       if (calcolaOre(entrata, uscita, 0) === 0) return setErrore('Entrata e uscita coincidono: controlla gli orari.')
     }
-    if (passo === 3 && ore <= 0) return setErrore('La pausa è più lunga del turno: controlla i dati.')
+    if (passo === 2 && ore <= 0) return setErrore('La pausa è più lunga del turno: controlla i dati.')
     setPasso(p => Math.min(PASSI - 1, p + 1) as Passo)
   }
 
   function indietro() {
     setErrore('')
     if (passo === 0) { nav('/'); return }
-    if (oreDirette !== null && passo === 4) { setPasso(1); return }
+    if (oreDirette !== null && passo === 3) { setPasso(0); setOreDirette(null); return }
     setPasso(p => Math.max(0, p - 1) as Passo)
   }
 
@@ -56,7 +61,7 @@ export default function Registra({ worker }: { worker: Worker }) {
     try {
       await db.addEntry({
         worker_id: worker.id,
-        work_date: data,
+        work_date: todayISO(),                    // ricalcolata al momento del salvataggio
         start_time: oreDirette === null ? entrata : null,
         end_time: oreDirette === null ? uscita : null,
         break_minutes: oreDirette === null ? pausa : 0,
@@ -64,14 +69,15 @@ export default function Registra({ worker }: { worker: Worker }) {
         note: null,
       })
       refresh()
-      nav('/', { replace: true, state: { salvato: { ore, guadagno, data } } })
+      nav('/', { replace: true, state: { salvato: { ore, guadagno, data: todayISO() } } })
     } catch (err) {
-      setErrore(err instanceof Error ? err.message : 'Non sono riuscito a salvare.')
+      const m = err instanceof Error ? err.message : ''
+      setErrore(/row-level security|violates|42501/i.test(m)
+        ? 'Puoi registrare solo la giornata di oggi. Se è passata la mezzanotte, chiedi al titolare di inserirla lui.'
+        : m || 'Non sono riuscito a salvare.')
       setAttesa(false)
     }
   }
-
-  const domande = ['Che giorno hai lavorato?', 'A che ora sei entrato?', 'A che ora sei uscito?', 'Hai fatto pausa?', 'Confermi tutto?']
 
   return (
     <div className="min-h-full bg-ink-100">
@@ -98,37 +104,22 @@ export default function Registra({ worker }: { worker: Worker }) {
             ))}
           </div>
 
-          <h1 className="mt-6 text-[27px] font-extrabold leading-tight tracking-tight">{domande[passo]}</h1>
+          <div className="mt-5 inline-flex items-center gap-2 rounded-full bg-white/15 px-3.5 py-1.5">
+            <IconClock className="h-4 w-4" />
+            <span className="text-[13px] font-semibold capitalize">Oggi · {dataLunga(oggi)}</span>
+          </div>
+
+          <h1 className="mt-4 text-[27px] font-extrabold leading-tight tracking-tight">{DOMANDE[passo]}</h1>
         </header>
 
         <div key={passo} className="animate-rise space-y-4 px-5 pt-6 pb-40">
 
-          {/* ---------------------------------------------------------- Giorno */}
           {passo === 0 && (
-            <>
-              <div className="grid grid-cols-2 gap-3">
-                <ChipGrande attivo={data === todayISO()} onClick={() => setData(todayISO())}
-                            titolo="Oggi" sotto={dataLunga(todayISO()).split(' ').slice(0, 3).join(' ')} />
-                <ChipGrande attivo={data === giorniFa(1)} onClick={() => setData(giorniFa(1))}
-                            titolo="Ieri" sotto={dataLunga(giorniFa(1)).split(' ').slice(0, 3).join(' ')} />
-              </div>
-              <Card className="p-5">
-                <Field label="Oppure scegli un altro giorno">
-                  <input type="date" className={inputCls} value={data} max={todayISO()}
-                         onChange={e => e.target.value && setData(e.target.value)} />
-                </Field>
-              </Card>
-              <RiepilogoRiga icona={<IconCalendar className="h-4 w-4" />} testo={dataLunga(data)} />
-            </>
-          )}
-
-          {/* --------------------------------------------------------- Entrata */}
-          {passo === 1 && (
             <>
               <SceltaOrario valore={entrata} onChange={setEntrata} etichetta="Orario di entrata" />
               <Presets valori={['06:00', '07:00', '08:00', '09:00', '14:00', '15:00']} attivo={entrata} onPick={setEntrata} />
               <button
-                onClick={() => { setOreDirette(8); setPasso(4) }}
+                onClick={() => { setOreDirette(8); setPasso(3) }}
                 className="w-full rounded-2xl bg-white px-4 py-3.5 text-[14px] font-semibold text-brand-700 ring-1 ring-ink-200 active:scale-[.98] transition"
               >
                 Non ricordo gli orari → inserisco solo le ore totali
@@ -136,24 +127,29 @@ export default function Registra({ worker }: { worker: Worker }) {
             </>
           )}
 
-          {/* ---------------------------------------------------------- Uscita */}
-          {passo === 2 && (
+          {passo === 1 && (
             <>
               <SceltaOrario valore={uscita} onChange={setUscita} etichetta="Orario di uscita" />
               <Presets valori={['12:00', '13:00', '17:00', '18:00', '19:00', '22:00']} attivo={uscita} onPick={setUscita} />
               {calcolaOre(entrata, uscita, 0) > 0 && (
-                <RiepilogoRiga icona={<IconClock className="h-4 w-4" />}
-                               testo={`Dalle ${entrata} alle ${uscita} · ${oreLabel(calcolaOre(entrata, uscita, 0))} prima della pausa`} />
+                <div className="flex items-center gap-2.5 rounded-2xl bg-brand-50 px-4 py-3 text-[14px] font-medium text-brand-700">
+                  <IconClock className="h-4 w-4" />
+                  Dalle {entrata} alle {uscita} · {oreLabel(calcolaOre(entrata, uscita, 0))} prima della pausa
+                </div>
               )}
             </>
           )}
 
-          {/* ----------------------------------------------------------- Pausa */}
-          {passo === 3 && (
+          {passo === 2 && (
             <>
               <div className="grid grid-cols-2 gap-3">
                 {[[0, 'Nessuna pausa'], [30, '30 minuti'], [60, '1 ora'], [90, '1 ora e mezza']].map(([v, t]) => (
-                  <ChipGrande key={v} attivo={pausa === v} onClick={() => setPausa(v as number)} titolo={t as string} />
+                  <button key={v} onClick={() => setPausa(v as number)}
+                    className={cx('rounded-3xl px-4 py-5 text-left text-[17px] font-bold transition active:scale-[.97]',
+                      pausa === v ? 'bg-brand-600 text-white shadow-lg shadow-brand-600/25'
+                                  : 'bg-white text-ink-900 ring-1 ring-ink-200')}>
+                    {t}
+                  </button>
                 ))}
               </div>
               <Card className="p-5">
@@ -165,12 +161,11 @@ export default function Registra({ worker }: { worker: Worker }) {
             </>
           )}
 
-          {/* -------------------------------------------------------- Conferma */}
-          {passo === 4 && (
+          {passo === 3 && (
             <>
               <Card className="overflow-hidden">
                 <div className="bg-gradient-to-br from-ink-900 to-ink-700 px-6 py-7 text-center text-white">
-                  <p className="text-[13px] font-medium text-white/60">{dataLunga(data)}</p>
+                  <p className="text-[13px] font-medium capitalize text-white/60">{dataLunga(oggi)}</p>
                   <p className="mt-2 text-[44px] font-extrabold leading-none tracking-tight">{oreLabel(ore)}</p>
                   <p className="mt-2 text-[15px] font-semibold text-emerald-300">{euro(guadagno)}</p>
                 </div>
@@ -202,19 +197,19 @@ export default function Registra({ worker }: { worker: Worker }) {
                   </Field>
                 </Card>
               )}
-
             </>
           )}
 
           <Errore>{errore}</Errore>
         </div>
 
-        {/* ------------------------------------------------------ Barra azione */}
         <div className="fixed inset-x-0 bottom-0 z-40 safe-bottom">
           <div className="mx-auto max-w-[480px] border-t border-ink-200/60 bg-white/92 px-5 py-4 backdrop-blur-xl">
-            {passo < 4 ? (
+            {passo < 3 ? (
               <Button size="lg" full onClick={avanti}>
-                Avanti <IconRightSmall />
+                Avanti
+                <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth={2}
+                     strokeLinecap="round" strokeLinejoin="round"><path d="M9 6l6 6-6 6" /></svg>
               </Button>
             ) : (
               <>
@@ -230,25 +225,6 @@ export default function Registra({ worker }: { worker: Worker }) {
         </div>
       </div>
     </div>
-  )
-}
-
-/* ------------------------------------------------------------- pezzettini */
-
-function IconRightSmall() {
-  return <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth={2}
-              strokeLinecap="round" strokeLinejoin="round"><path d="M9 6l6 6-6 6" /></svg>
-}
-
-function ChipGrande({ attivo, onClick, titolo, sotto }: { attivo: boolean; onClick: () => void; titolo: string; sotto?: string }) {
-  return (
-    <button onClick={onClick}
-      className={cx('rounded-3xl px-4 py-5 text-left transition active:scale-[.97]',
-        attivo ? 'bg-brand-600 text-white shadow-lg shadow-brand-600/25'
-               : 'bg-white text-ink-900 ring-1 ring-ink-200')}>
-      <span className="block text-[17px] font-bold leading-tight">{titolo}</span>
-      {sotto && <span className={cx('mt-0.5 block text-[13px]', attivo ? 'text-white/75' : 'text-ink-400')}>{sotto}</span>}
-    </button>
   )
 }
 
@@ -271,14 +247,6 @@ function Riga({ t, v }: { t: string; v: string }) {
     <div className="flex items-center justify-between py-3">
       <dt className="text-[14px] text-ink-500">{t}</dt>
       <dd className="text-[15px] font-bold text-ink-900">{v}</dd>
-    </div>
-  )
-}
-
-function RiepilogoRiga({ icona, testo }: { icona: React.ReactNode; testo: string }) {
-  return (
-    <div className="flex items-center gap-2.5 rounded-2xl bg-brand-50 px-4 py-3 text-[14px] font-medium text-brand-700">
-      {icona}<span className="capitalize">{testo}</span>
     </div>
   )
 }

@@ -14,12 +14,20 @@ Adesso:
 
 | Chi | Cosa fa |
 |-----|---------|
-| **Il lavoratore** | Apre l'app, risponde a 4 domande (che giorno, entrata, uscita, pausa), conferma. Fine. |
+| **Il lavoratore** | A fine giornata apre l'app, risponde a 3 domande (entrata, uscita, pausa) e conferma. Fine. |
 | **Tu (titolare)** | Vedi subito le ore che arrivano, il totale che gli devi, e registri i pagamenti che fai. |
 | **L'app** | Fa i conti da sola e tiene lo **storico completo**: ogni giornata, ogni pagamento, e quanto restava da dare dopo ognuno. |
 
-Nessuno può barare: il lavoratore **non può** registrare pagamenti, e può cancellare una
-giornata sbagliata solo entro 24 ore. Tu vedi sempre tutto.
+Nessuno può barare:
+
+- il lavoratore **non può** registrare pagamenti;
+- può registrare **solo la giornata in corso** — niente giorni passati, niente futuri.
+  È il suo obbligo di fine giornata, e la regola è imposta dal database, non solo
+  dalla schermata: non è aggirabile;
+- può cancellare una giornata sbagliata solo entro 24 ore.
+
+Se un lavoratore dimentica una giornata, la inserisci tu dalla sua scheda con
+**"Aggiungi una giornata dimenticata"**: è l'unica strada per una data passata.
 
 ---
 
