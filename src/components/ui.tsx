@@ -128,6 +128,30 @@ export function Avatar({ name, size = 44 }: { name: string; size?: number }) {
   )
 }
 
+/* ------------------------------------------------------------------- Led */
+
+/**
+ * Pallino di stato: verde e pulsante se ha registrato oggi, ambra se ieri,
+ * rosso se è fermo da più giorni, grigio se non ha mai registrato.
+ */
+export function Led({ stato }: { stato: 'oggi' | 'recente' | 'fermo' | 'mai' }) {
+  const colore = {
+    oggi: 'bg-emerald-500',
+    recente: 'bg-amber-500',
+    fermo: 'bg-rose-500',
+    mai: 'bg-ink-300',
+  }[stato]
+
+  return (
+    <span className="relative flex h-2.5 w-2.5 shrink-0">
+      {stato === 'oggi' && (
+        <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-75" />
+      )}
+      <span className={cx('relative inline-flex h-2.5 w-2.5 rounded-full', colore)} />
+    </span>
+  )
+}
+
 /* --------------------------------------------------------------- Spinner */
 
 export function Spinner({ className }: { className?: string }) {

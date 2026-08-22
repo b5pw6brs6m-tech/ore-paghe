@@ -35,6 +35,8 @@ export type Entry = {
   hours: number
   hourly_rate: number      // tariffa "congelata" al momento della registrazione
   note: string | null
+  /** Chi l'ha inserita: il lavoratore stesso oppure il titolare. */
+  created_by: string
   created_at: string
 }
 

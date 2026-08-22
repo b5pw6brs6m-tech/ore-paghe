@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Button, Caricamento, Card, Errore, Field, Sheet, Spinner, Vuoto, Avatar, inputCls } from '../../components/ui'
+import { Button, Caricamento, Card, Errore, Field, Led, Sheet, Spinner, Vuoto, Avatar, inputCls } from '../../components/ui'
 import { Header, Sezione } from '../../components/Shell'
 import { IconBell, IconLogout, IconPlus, IconRight, IconUsers } from '../../components/icons'
 import { euro, oreLabel, dataBreve } from '../../lib/format'
@@ -8,6 +8,7 @@ import { riepilogo, round2 } from '../../lib/calc'
 import { db } from '../../lib/db'
 import { useApp, useCarica } from '../../context/AppContext'
 import { avvisa, chiediPermessoNotifiche, segnaVisto, ultimaVisita } from '../../lib/novita'
+import { ultimoIngresso } from '../../lib/ultimoIngresso'
 import type { Entry, Payment, Worker } from '../../lib/types'
 
 export default function AdminLavoratori() {
@@ -45,6 +46,7 @@ export default function AdminLavoratori() {
   const totali = workers.map(w => ({
     w,
     r: riepilogo(entries.filter(e => e.worker_id === w.id), payments.filter(p => p.worker_id === w.id)),
+    ingresso: ultimoIngresso(entries.filter(e => e.worker_id === w.id), w.user_id),
   }))
   const daPagare = round2(totali.reduce((a, t) => a + t.r.balance, 0))
   const oreTotali = round2(totali.reduce((a, t) => a + t.r.totalHours, 0))
@@ -126,23 +128,35 @@ export default function AdminLavoratori() {
           />
         ) : (
           <div className="space-y-2.5">
-            {totali.map(({ w, r }) => (
-              <Card key={w.id} onClick={() => nav(`/lavoratore/${w.id}`)} className="flex items-center gap-4 px-4 py-4">
-                <Avatar name={w.name} />
-                <div className="min-w-0 flex-1">
-                  <p className="truncate text-[16px] font-bold text-ink-900">{w.name}</p>
-                  <p className="truncate text-[13px] text-ink-500">
-                    {euro(w.hourly_rate)}/h · {oreLabel(r.totalHours)} · {r.days} días
-                    {!w.user_id && <span className="ml-1 font-semibold text-amber-600">· falta el acceso</span>}
-                  </p>
+            {totali.map(({ w, r, ingresso }) => (
+              <Card key={w.id} onClick={() => nav(`/lavoratore/${w.id}`)} className="overflow-hidden">
+                <div className="flex items-center gap-3.5 px-4 pt-4 pb-3.5">
+                  <Avatar name={w.name} />
+                  <div className="min-w-0 flex-1">
+                    <p className="truncate text-[16px] font-bold text-ink-900">{w.name}</p>
+                    <p className="truncate text-[13px] text-ink-500">
+                      {euro(w.hourly_rate)}/h · {oreLabel(r.totalHours)}
+                    </p>
+                  </div>
+                  <div className="shrink-0 text-right">
+                    <p className={`text-[17px] font-extrabold ${r.balance > 0 ? 'text-brand-600' : 'text-emerald-600'}`}>
+                      {euro(r.balance)}
+                    </p>
+                    <p className="text-[11px] text-ink-400">{r.balance > 0 ? 'por pagar' : r.balance < 0 ? 'por adelantado' : 'al día'}</p>
+                  </div>
+                  <IconRight className="h-4 w-4 shrink-0 text-ink-300" />
                 </div>
-                <div className="text-right">
-                  <p className={`text-[17px] font-extrabold ${r.balance > 0 ? 'text-brand-600' : 'text-emerald-600'}`}>
-                    {euro(r.balance)}
-                  </p>
-                  <p className="text-[11px] text-ink-400">{r.balance > 0 ? 'por pagar' : r.balance < 0 ? 'por adelantado' : 'al día'}</p>
+
+                {/* riga di stato: quando ha registrato l'ultima volta */}
+                <div className="flex items-center gap-2 border-t border-ink-100 bg-ink-50/60 px-4 py-2.5">
+                  <Led stato={ingresso.stato} />
+                  <span className="truncate text-[12.5px] text-ink-500">{ingresso.testo}</span>
+                  <span className="ml-auto shrink-0 text-[12px] text-ink-400">
+                    {!w.user_id
+                      ? <b className="font-semibold text-amber-600">falta el acceso</b>
+                      : `${r.days} ${r.days === 1 ? 'día' : 'días'}`}
+                  </span>
                 </div>
-                <IconRight className="h-4 w-4 text-ink-300" />
               </Card>
             ))}
           </div>

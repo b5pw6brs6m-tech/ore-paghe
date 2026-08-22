@@ -46,10 +46,14 @@ function seed(): Db {
 
   const giorniFa = (n: number) => { const d = new Date(); d.setDate(d.getDate() - n); return toISO(d) }
   const turno = (w: Worker, n: number, start: string, end: string, pausa: number) => {
+    // registrata la sera stessa del turno, come farebbe davvero il lavoratore
+    const seraStessa = new Date()
+    seraStessa.setDate(seraStessa.getDate() - n)
+    seraStessa.setHours(19, 20, 0, 0)
     db.entries.push({
       id: uid(), worker_id: w.id, work_date: giorniFa(n), start_time: start, end_time: end,
       break_minutes: pausa, hours: calcolaOre(start, end, pausa), hourly_rate: w.hourly_rate,
-      note: null, created_at: now(),
+      note: null, created_by: w.user_id ?? '', created_at: seraStessa.toISOString(),
     })
   }
 
@@ -246,7 +250,8 @@ export const localApi: Api = {
       throw new Error('Solo puedes registrar la jornada de hoy.')
     }
     const row: Entry = {
-      id: uid(), ...e, hours: round2(e.hours), hourly_rate: w.hourly_rate, created_at: now(),
+      id: uid(), ...e, hours: round2(e.hours), hourly_rate: w.hourly_rate,
+      created_by: a.userId, created_at: now(),
     }
     db.entries.push(row)
     save()

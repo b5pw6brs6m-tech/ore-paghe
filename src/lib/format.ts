@@ -62,6 +62,29 @@ export function maiuscola(t: string): string {
   return t ? t[0].toUpperCase() + t.slice(1) : t
 }
 
+/**
+ * Momento in cui il lavoratore ha registrato, detto come lo direbbe una persona:
+ * "hoy a las 18:42", "ayer a las 19:05", "vie 21 ago a las 18:00".
+ */
+export function quandoLabel(iso: string): string {
+  const d = new Date(iso)
+  const p = (n: number) => String(n).padStart(2, '0')
+  const ora = `${p(d.getHours())}:${p(d.getMinutes())}`
+  const giorni = giorniDaOggi(iso)
+  if (giorni === 0) return `hoy a las ${ora}`
+  if (giorni === 1) return `ayer a las ${ora}`
+  return `${dataBreve(toISO(d))} a las ${ora}`
+}
+
+/** Quanti giorni di calendario sono passati: 0 = oggi, 1 = ieri… */
+export function giorniDaOggi(iso: string): number {
+  const d = new Date(iso)
+  const a = new Date(d.getFullYear(), d.getMonth(), d.getDate())
+  const oggi = new Date()
+  const b = new Date(oggi.getFullYear(), oggi.getMonth(), oggi.getDate())
+  return Math.round((b.getTime() - a.getTime()) / 864e5)
+}
+
 export function iniziali(nombre: string): string {
   return nombre.trim().split(/\s+/).slice(0, 2).map(p => p[0]?.toUpperCase() ?? '').join('') || '?'
 }
