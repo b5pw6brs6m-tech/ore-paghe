@@ -13,6 +13,7 @@ export default defineConfig({
     tailwindcss(),
     VitePWA({
       registerType: 'autoUpdate',
+      injectRegister: null,   // la registrazione la facciamo noi, in src/lib/aggiornamento.ts
       includeAssets: ['icon-192.png', 'icon-512.png', 'apple-touch-icon.png'],
       manifest: {
         name: 'Al Día',
