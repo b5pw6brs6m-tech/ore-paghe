@@ -25,7 +25,7 @@ function boom(error: { message: string } | null): void {
   if (/password should be at least/i.test(m)) throw new Error('La contraseña debe tener al menos 6 caracteres.')
   if (/email address .* is invalid/i.test(m)) throw new Error('Usuario no válido: usa solo letras y números, o un correo real.')
   if (/REGISTRAZIONE_CHIUSA|Database error saving new user|unexpected_failure/i.test(m)) {
-    throw new Error('Aquí no se crean cuentas: los accesos los crea el jefe desde la app.')
+    throw new Error('Los accesos los crea el jefe desde la app.')
   }
   if (/rate limit|too many/i.test(m)) throw new Error('Demasiados intentos seguidos. Prueba dentro de unos minutos.')
   throw new Error(m)

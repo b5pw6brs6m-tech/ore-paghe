@@ -137,7 +137,7 @@ export const localApi: Api = {
     await wait()
     // Un solo titolare: come nel database, dopo il primo la registrazione è chiusa.
     if (db.accounts.some(a => a.role === 'admin')) {
-      throw new Error('Aquí no se crean cuentas: los accesos los crea el jefe desde la app.')
+      throw new Error('Los accesos los crea el jefe desde la app.')
     }
     const l = normalizzaLogin(email)
     if (db.accounts.some(a => a.login === l)) throw new Error('Ya existe una cuenta con ese correo.')
