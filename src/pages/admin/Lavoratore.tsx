@@ -4,7 +4,7 @@ import { Avatar, Button, Caricamento, Card, Errore, Field, Led, Sheet, Spinner, 
 import { IconCheck, IconClock, IconCopy, IconEdit, IconKey, IconLeft, IconPlus, IconShare, IconTrash, IconWallet } from '../../components/icons'
 import { dataLunga, euro, maiuscola, oreLabel, todayISO } from '../../lib/format'
 import { calcolaOre, riepilogo, round2 } from '../../lib/calc'
-import { ultimaRegistrazione, ultimoAccesso } from '../../lib/ultimoIngresso'
+import { ultimoAccesso } from '../../lib/ultimoIngresso'
 import { db } from '../../lib/db'
 import { normalizzaLogin } from '../../lib/api'
 import { apriWhatsApp, condividiNativo, copiaTesto } from '../../lib/condividi'
@@ -42,7 +42,6 @@ export default function AdminLavoratore() {
 
   const r = riepilogo(entries, payments)
   const accesso = ultimoAccesso(worker)
-  const registrazione = ultimaRegistrazione(entries, worker.user_id)
 
   async function eliminaOre(entryId: string) {
     if (!confirm('¿Eliminar esta jornada?')) return
@@ -78,7 +77,6 @@ export default function AdminLavoratore() {
               <Led stato={accesso.stato} />
               {accesso.testo}
             </p>
-            <p className="mt-0.5 truncate pl-4 text-[12px] text-white/55">{registrazione.testo}</p>
           </div>
         </div>
 

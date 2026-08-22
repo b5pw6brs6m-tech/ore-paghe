@@ -1,5 +1,5 @@
 import { giorniDaOggi, quandoLabel } from './format'
-import type { Entry, Worker } from './types'
+import type { Worker } from './types'
 
 export type Stato = 'oggi' | 'recente' | 'fermo' | 'mai'
 
@@ -23,17 +23,4 @@ export function ultimoAccesso(worker: Worker): { stato: Stato; testo: string } {
   const quando = quandoLabel(worker.last_seen!)
   if (s === 'fermo') return { stato: s, testo: `Entró ${quando}` }
   return { stato: s, testo: `Entró ${quando}` }
-}
-
-/**
- * Ultima giornata registrata DA LUI. Se una giornata dimenticata la inserisce
- * il titolare, non conta: non vuol dire che il lavoratore sia stato puntuale.
- */
-export function ultimaRegistrazione(entries: Entry[], workerUserId: string | null): { stato: Stato; testo: string } {
-  const suoi = workerUserId ? entries.filter(e => e.created_by === workerUserId) : []
-  if (suoi.length === 0) {
-    return { stato: 'mai', testo: 'Aún no ha registrado ninguna jornada' }
-  }
-  const ultimo = suoi.reduce((a, b) => (a.created_at > b.created_at ? a : b))
-  return { stato: stato(ultimo.created_at), testo: `Última jornada: ${quandoLabel(ultimo.created_at)}` }
 }
