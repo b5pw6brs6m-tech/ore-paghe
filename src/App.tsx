@@ -1,7 +1,8 @@
+import { useState } from 'react'
 import { Navigate, Route, Routes, useLocation } from 'react-router-dom'
-import { Button, Caricamento, Vuoto } from './components/ui'
+import { Button, Caricamento, Errore, Field, Spinner, Vuoto, inputCls } from './components/ui'
 import { Shell, type NavItem } from './components/Shell'
-import { IconClock, IconUsers, IconWallet } from './components/icons'
+import { IconCheck, IconClock, IconKey, IconUsers, IconWallet } from './components/icons'
 import { useApp, useCarica } from './context/AppContext'
 import { db } from './lib/db'
 import type { Worker } from './lib/types'
@@ -19,6 +20,8 @@ export default function App() {
   const { user, loading } = useApp()
 
   if (loading) return <Caricamento testo="Un momento…" />
+  // Arrivo dal link di recupero ricevuto per email: prima si sceglie la nuova password.
+  if (db.inRecupero()) return <NuovaPassword />
   if (!user) return <Login />
   return user.role === 'admin' ? <AreaAdmin /> : <AreaLavoratore />
 }
@@ -93,5 +96,59 @@ function AreaLavoratore() {
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </Shell>
+  )
+}
+
+/* ------------------------------------------------------- nuova password */
+
+function NuovaPassword() {
+  const { refresh, signOut } = useApp()
+  const [password, setPassword] = useState('')
+  const [ripeti, setRipeti] = useState('')
+  const [errore, setErrore] = useState('')
+  const [attesa, setAttesa] = useState(false)
+
+  async function salva() {
+    setErrore(''); setAttesa(true)
+    try {
+      if (password.length < 6) throw new Error('La contraseña debe tener al menos 6 caracteres.')
+      if (password !== ripeti) throw new Error('Las dos contraseñas no coinciden.')
+      await db.cambiaPassword(password)
+      refresh()
+    } catch (err) {
+      setErrore(err instanceof Error ? err.message : 'No he podido cambiarla.')
+    } finally { setAttesa(false) }
+  }
+
+  return (
+    <div className="min-h-full bg-gradient-to-b from-brand-700 via-brand-600 to-brand-500">
+      <div className="mx-auto flex min-h-screen max-w-[480px] flex-col justify-center px-5 safe-top safe-bottom">
+        <div className="animate-rise rounded-[28px] bg-white p-6 shadow-2xl">
+          <div className="mb-5 flex flex-col items-center text-center">
+            <div className="mb-3 rounded-2xl bg-brand-50 p-3 text-brand-600">
+              <IconKey className="h-6 w-6" />
+            </div>
+            <h1 className="text-[20px] font-extrabold text-ink-900">Pon una contraseña nueva</h1>
+            <p className="mt-1 text-[14px] text-ink-500">Apúntala en un sitio seguro.</p>
+          </div>
+
+          <div className="space-y-4">
+            <Field label="Contraseña nueva" hint="Al menos 6 caracteres.">
+              <input className={inputCls} type="password" value={password}
+                     onChange={e => setPassword(e.target.value)} autoComplete="new-password" placeholder="••••••" />
+            </Field>
+            <Field label="Repítela">
+              <input className={inputCls} type="password" value={ripeti}
+                     onChange={e => setRipeti(e.target.value)} autoComplete="new-password" placeholder="••••••" />
+            </Field>
+            <Errore>{errore}</Errore>
+            <Button size="lg" full onClick={salva} disabled={attesa || !password || !ripeti}>
+              {attesa ? <Spinner /> : <><IconCheck className="h-5 w-5" /> Guardar la contraseña</>}
+            </Button>
+            <Button variant="ghost" full onClick={() => void signOut()}>Cancelar</Button>
+          </div>
+        </div>
+      </div>
+    </div>
   )
 }

@@ -18,11 +18,17 @@ export interface Api {
   signIn(login: string, password: string): Promise<void>
   signUpAdmin(email: string, password: string, fullName: string): Promise<{ needsConfirm: boolean }>
   signOut(): Promise<void>
+  /** Manda l'email per reimpostare la password. */
+  recuperaPassword(email: string): Promise<void>
+  /** Imposta una nuova password per l'utente collegato adesso. */
+  cambiaPassword(nuova: string): Promise<void>
+  /** true quando si è arrivati dal link di recupero ricevuto per email. */
+  inRecupero(): boolean
 
   // --- Area admin ---
   listWorkers(): Promise<Worker[]>
   createWorker(name: string, hourlyRate: number): Promise<Worker>
-  updateWorker(id: string, patch: Partial<Pick<Worker, 'name' | 'hourly_rate' | 'active'>>): Promise<void>
+  updateWorker(id: string, patch: Partial<Pick<Worker, 'name' | 'hourly_rate' | 'active' | 'access_login' | 'access_password'>>): Promise<void>
   deleteWorker(id: string): Promise<void>
   createWorkerAccount(workerId: string, login: string, password: string): Promise<void>
 

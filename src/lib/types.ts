@@ -18,6 +18,9 @@ export type Worker = {
   name: string
   hourly_rate: number
   link_code: string
+  /** Credenziali consegnate al lavoratore, così il titolare può rimandargliele. */
+  access_login: string | null
+  access_password: string | null
   active: boolean
   created_at: string
 }

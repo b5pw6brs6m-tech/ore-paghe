@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Button, Errore, Field, inputCls, Spinner } from '../components/ui'
+import { Button, Errore, Field, Sheet, inputCls, Spinner } from '../components/ui'
 import { IconClock, IconInfo } from '../components/icons'
 import { db, isDemo } from '../lib/db'
 import { useApp } from '../context/AppContext'
@@ -14,6 +14,7 @@ export default function Login() {
   const [password, setPassword] = useState('')
   const [errore, setErrore] = useState('')
   const [attesa, setAttesa] = useState(false)
+  const [recupero, setRecupero] = useState(false)
 
   async function invia(e: React.FormEvent) {
     e.preventDefault()
@@ -72,6 +73,14 @@ export default function Login() {
             </Button>
           </form>
 
+          <button
+            type="button"
+            onClick={() => setRecupero(true)}
+            className="mt-4 w-full text-center text-[14px] font-semibold text-brand-600 active:opacity-60"
+          >
+            ¿Has olvidado la contraseña?
+          </button>
+
           <p className="mt-5 border-t border-ink-100 pt-4 text-center text-[13px] leading-relaxed text-ink-400">
             Usa el usuario y la contraseña que te ha dado el jefe.
             <br />Aquí no se crean cuentas: las crea él.
@@ -95,11 +104,78 @@ export default function Login() {
           </div>
         )}
 
+        <Recuperar open={recupero} onClose={() => setRecupero(false)} />
+
         <div className="flex-1" />
         <p className="py-6 text-center text-[12px] text-white/50">
           Añade la app a la pantalla de inicio para usarla como una app normal.
         </p>
       </div>
     </div>
+  )
+}
+
+/* ------------------------------------------------------------- recupero */
+
+/**
+ * Il lavoratore non ha un'email vera, quindi per lui il recupero è chiedere
+ * le credenziali al titolare, che le ha annotate. Il titolare invece riceve
+ * il link per email.
+ */
+function Recuperar({ open, onClose }: { open: boolean; onClose: () => void }) {
+  const [email, setEmail] = useState('')
+  const [errore, setErrore] = useState('')
+  const [inviato, setInviato] = useState(false)
+  const [attesa, setAttesa] = useState(false)
+
+  async function invia() {
+    setErrore(''); setAttesa(true)
+    try {
+      const v = email.trim().toLowerCase()
+      if (!v.includes('@') || v.endsWith('@ore.app')) {
+        throw new Error('Escribe un correo de verdad. Si eres trabajador, pídele las credenciales a tu jefe.')
+      }
+      await db.recuperaPassword(v)
+      setInviato(true)
+    } catch (err) {
+      setErrore(err instanceof Error ? err.message : 'No he podido enviar el correo.')
+    } finally { setAttesa(false) }
+  }
+
+  return (
+    <Sheet open={open} onClose={() => { onClose(); setInviato(false) }} title="Recuperar la contraseña">
+      {inviato ? (
+        <div className="space-y-4">
+          <p className="rounded-2xl bg-emerald-50 px-4 py-4 text-[14px] font-medium leading-relaxed text-emerald-800">
+            Te he mandado un correo a <b>{email}</b>. Ábrelo y pulsa el enlace:
+            desde ahí podrás poner una contraseña nueva.
+          </p>
+          <p className="text-[13px] leading-relaxed text-ink-500">
+            Si no lo ves, mira en la carpeta de correo no deseado.
+          </p>
+          <Button full variant="ghost" onClick={() => { onClose(); setInviato(false) }}>Cerrar</Button>
+        </div>
+      ) : (
+        <div className="space-y-4">
+          <div className="rounded-2xl bg-brand-50 px-4 py-4 text-[14px] leading-relaxed text-brand-800">
+            <b>¿Eres trabajador?</b> Pídele las credenciales a tu jefe: él las tiene
+            guardadas y te las puede volver a mandar por WhatsApp al momento.
+          </div>
+          <p className="text-[14px] leading-relaxed text-ink-500">
+            Si eres el jefe, escribe tu correo y te mando un enlace para poner
+            una contraseña nueva.
+          </p>
+          <Field label="Tu correo">
+            <input className={inputCls} value={email} onChange={e => setEmail(e.target.value)}
+                   type="email" autoCapitalize="none" autoCorrect="off" spellCheck={false}
+                   placeholder="miguel@correo.es" autoComplete="email" />
+          </Field>
+          <Errore>{errore}</Errore>
+          <Button size="lg" full onClick={invia} disabled={attesa || !email}>
+            {attesa ? <Spinner /> : 'Enviar el enlace'}
+          </Button>
+        </div>
+      )}
+    </Sheet>
   )
 }

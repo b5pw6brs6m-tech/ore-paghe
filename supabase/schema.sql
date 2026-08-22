@@ -23,6 +23,13 @@ create table if not exists public.workers (
   active      boolean not null default true,
   created_at  timestamptz not null default now()
 );
+-- Le credenziali che il titolare consegna al lavoratore, tenute in chiaro
+-- APPOSTA: servono a lui per poterle rimandare se il lavoratore le perde.
+-- Le legge solo il titolare che possiede la scheda (e il lavoratore stesso,
+-- che sono comunque le sue). Nessun altro.
+alter table public.workers add column if not exists access_login    text;
+alter table public.workers add column if not exists access_password text;
+
 create index if not exists workers_admin_idx on public.workers(admin_id);
 create index if not exists workers_user_idx  on public.workers(user_id);
 

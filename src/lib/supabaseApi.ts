@@ -31,6 +31,12 @@ function boom(error: { message: string } | null): void {
   throw new Error(m)
 }
 
+/** Alzato quando Supabase riconosce il link di recupero password. */
+let recupero = false
+supabase?.auth.onAuthStateChange((evento) => {
+  if (evento === 'PASSWORD_RECOVERY') recupero = true
+})
+
 export const supabaseApi: Api = {
   mode: 'cloud',
 
@@ -77,7 +83,25 @@ export const supabaseApi: Api = {
   },
 
   async signOut() {
+    recupero = false
     await sb().auth.signOut()
+  },
+
+  async recuperaPassword(email) {
+    const { error } = await sb().auth.resetPasswordForEmail(normalizzaLogin(email), {
+      redirectTo: `${window.location.origin}${import.meta.env.BASE_URL}`,
+    })
+    boom(error)
+  },
+
+  async cambiaPassword(nuova) {
+    const { error } = await sb().auth.updateUser({ password: nuova })
+    boom(error)
+    recupero = false
+  },
+
+  inRecupero() {
+    return recupero
   },
 
   async listWorkers() {
@@ -130,6 +154,12 @@ export const supabaseApi: Api = {
 
     // Verifica che il collegamento sia andato a buon fine.
     const { data: check } = await sb().from('workers').select('user_id').eq('id', workerId).single()
+    // Le credenziali restano annotate sulla scheda: servono al titolare
+    // per rimandarle al lavoratore se le perde.
+    await sb().from('workers')
+      .update({ access_login: normalizzaLogin(login), access_password: password })
+      .eq('id', workerId)
+
     if (!check?.user_id) {
       throw new Error('No he podido vincular el acceso. Normalmente es porque ese usuario ya existe: prueba con otro. Si sigue fallando, revisa que el script SQL se haya ejecutado en Supabase.')
     }

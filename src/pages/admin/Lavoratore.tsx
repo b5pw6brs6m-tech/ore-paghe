@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { Avatar, Button, Caricamento, Card, Errore, Field, Sheet, Spinner, Vuoto, cx, inputCls } from '../../components/ui'
 import { IconCheck, IconClock, IconCopy, IconEdit, IconKey, IconLeft, IconPlus, IconShare, IconTrash, IconWallet } from '../../components/icons'
@@ -286,29 +286,39 @@ function FormModifica({ open, onClose, worker }: { open: boolean; onClose: () =>
 
 /* --------------------------------------------------------------- accesso */
 
+/**
+ * Le credenziali restano annotate sulla scheda, così il titolare può
+ * rimandarle in qualsiasi momento se il lavoratore le perde.
+ */
 function FormAccesso({ open, onClose, worker }: { open: boolean; onClose: () => void; worker: Worker }) {
   const { refresh } = useApp()
-  const suggerito = worker.name.trim().split(/\s+/)[0].toLowerCase().replace(/[^a-z0-9]/g, '')
-  const [utente, setUtente] = useState(suggerito)
+  const sugerido = worker.name.trim().split(/\s+/)[0].toLowerCase().replace(/[^a-z0-9]/g, '')
+  const yaTiene = Boolean(worker.user_id)
+  const apuntadas = Boolean(worker.access_login && worker.access_password)
+
+  const [vista, setVista] = useState<'crear' | 'ver' | 'apuntar'>('crear')
+  const [utente, setUtente] = useState(sugerido)
   const [password, setPassword] = useState('')
   const [errore, setErrore] = useState('')
   const [attesa, setAttesa] = useState(false)
-  const [fatto, setFatto] = useState(false)
   const [esito, setEsito] = useState<'copiato' | 'errore' | null>(null)
 
-  const messaggio = `Hola ${worker.name.split(' ')[0]}, este es tu acceso a la app "Horas y Pagos":\n\n${window.location.origin}${import.meta.env.BASE_URL}\n\nUsuario: ${utente}\nContraseña: ${password}\n\nCada tarde, al terminar la jornada, abre la app y registra las horas que has hecho. Solo se puede el mismo día: al día siguiente ya no se puede.`
+  useEffect(() => {
+    if (!open) return
+    setErrore(''); setEsito(null)
+    if (!yaTiene) { setVista('crear'); setUtente(sugerido); setPassword('') }
+    else if (apuntadas) { setVista('ver') }
+    else { setVista('apuntar'); setUtente(worker.access_login ?? sugerido); setPassword('') }
+  }, [open, yaTiene, apuntadas, sugerido, worker.access_login])
 
-  async function crea() {
-    setErrore(''); setAttesa(true)
-    try {
-      if (!/^[a-z0-9._@-]{3,}$/i.test(utente.trim())) throw new Error('El usuario debe tener al menos 3 caracteres, sin espacios.')
-      if (password.length < 6) throw new Error('La contraseña debe tener al menos 6 caracteres.')
-      await db.createWorkerAccount(worker.id, utente.trim(), password)
-      refresh(); setFatto(true)
-    } catch (err) {
-      setErrore(err instanceof Error ? err.message : 'No he podido crear el acceso.')
-    } finally { setAttesa(false) }
-  }
+  const usuario = worker.access_login ?? utente
+  const clave = worker.access_password ?? password
+  const enlace = `${window.location.origin}${import.meta.env.BASE_URL}`
+  const messaggio =
+    `Hola ${worker.name.split(' ')[0]}, este es tu acceso a la app "Horas y Pagos":\n\n${enlace}\n\n` +
+    `Usuario: ${(vista === 'ver' ? usuario : utente).split('@')[0]}\nContraseña: ${vista === 'ver' ? clave : password}\n\n` +
+    `Cada tarde, al terminar la jornada, abre la app y registra las horas que has hecho. ` +
+    `Solo se puede el mismo día: al día siguiente ya no se puede.`
 
   async function copia() {
     const ok = await copiaTesto(messaggio)
@@ -321,59 +331,60 @@ function FormAccesso({ open, onClose, worker }: { open: boolean; onClose: () => 
     void copia()
   }
 
-  if (worker.user_id && !fatto) {
-    return (
-      <Sheet open={open} onClose={onClose} title="Acceso del trabajador">
-        <div className="space-y-4">
-          <div className="flex items-center gap-3 rounded-2xl bg-emerald-50 px-4 py-4 text-emerald-700">
-            <IconCheck className="h-5 w-5" />
-            <p className="text-[14px] font-semibold">El acceso ya está activo.</p>
-          </div>
-          <p className="text-[14px] leading-relaxed text-ink-500">
-            {worker.name.split(' ')[0]} entra en la app con el usuario y la contraseña que le diste.
-            Si los ha perdido, por seguridad la contraseña no se puede ver: pídeme que le borre el acceso
-            y créaselo de nuevo. Sus horas y sus pagos no se pierden.
-          </p>
-          <Button full variant="ghost" onClick={onClose}>Entendido</Button>
-        </div>
-      </Sheet>
-    )
+  async function crea() {
+    setErrore(''); setAttesa(true)
+    try {
+      if (!/^[a-z0-9._@-]{3,}$/i.test(utente.trim())) throw new Error('El usuario debe tener al menos 3 caracteres, sin espacios.')
+      if (password.length < 6) throw new Error('La contraseña debe tener al menos 6 caracteres.')
+      await db.createWorkerAccount(worker.id, utente.trim(), password)
+      refresh(); setVista('ver')
+    } catch (err) {
+      setErrore(err instanceof Error ? err.message : 'No he podido crear el acceso.')
+    } finally { setAttesa(false) }
   }
 
+  async function apunta() {
+    setErrore(''); setAttesa(true)
+    try {
+      if (!utente.trim()) throw new Error('Escribe el usuario que le diste.')
+      if (!password) throw new Error('Escribe la contraseña que le diste.')
+      await db.updateWorker(worker.id, {
+        access_login: normalizzaLogin(utente.trim()),
+        access_password: password,
+      })
+      refresh(); setVista('ver')
+    } catch (err) {
+      setErrore(err instanceof Error ? err.message : 'No he podido guardarlas.')
+    } finally { setAttesa(false) }
+  }
+
+  const titolo = vista === 'crear' ? 'Crear el acceso'
+    : vista === 'apuntar' ? 'Apuntar las credenciales'
+    : `Acceso de ${worker.name.split(' ')[0]}`
+
   return (
-    <Sheet open={open} onClose={() => { onClose(); setFatto(false) }} title={fatto ? 'Acceso creado' : 'Crear el acceso'}>
-      {fatto ? (
+    <Sheet open={open} onClose={onClose} title={titolo}>
+      {/* ---------------------------------------------------- vederle e inviarle */}
+      {vista === 'ver' && (
         <div className="space-y-4">
-          <div className="flex items-center gap-3 rounded-2xl bg-emerald-50 px-4 py-4 text-emerald-700">
-            <IconCheck className="h-5 w-5" />
-            <p className="text-[14px] font-semibold">¡Listo! Ahora dale las credenciales.</p>
-          </div>
           <Card className="divide-y divide-ink-100 ring-1 ring-ink-200">
             <div className="flex items-center justify-between gap-3 px-5 py-4">
               <span className="text-[13px] text-ink-500">Usuario</span>
-              <span className="select-all font-mono text-[15px] font-bold">{utente}</span>
+              <span className="select-all font-mono text-[15px] font-bold">{usuario.split('@')[0]}</span>
             </div>
             <div className="flex items-center justify-between gap-3 px-5 py-4">
               <span className="text-[13px] text-ink-500">Contraseña</span>
-              <span className="select-all font-mono text-[15px] font-bold">{password}</span>
+              <span className="select-all font-mono text-[15px] font-bold">{clave}</span>
             </div>
           </Card>
-          <p className="text-[13px] leading-relaxed text-ink-500">
-            Guarda o envía ya estos datos: la contraseña no se volverá a ver.
-            También puedes mantenerlos pulsados aquí arriba para seleccionarlos a mano.
-          </p>
 
           <Button size="lg" full onClick={() => apriWhatsApp(messaggio)}>
             <IconShare className="h-5 w-5" /> Enviar por WhatsApp
           </Button>
 
           <div className="grid grid-cols-2 gap-2.5">
-            <Button variant="ghost" onClick={copia}>
-              <IconCopy className="h-4 w-4" /> Copiar
-            </Button>
-            <Button variant="ghost" onClick={condividi}>
-              <IconShare className="h-4 w-4" /> Otro…
-            </Button>
+            <Button variant="ghost" onClick={copia}><IconCopy className="h-4 w-4" /> Copiar</Button>
+            <Button variant="ghost" onClick={condividi}><IconShare className="h-4 w-4" /> Otro…</Button>
           </div>
 
           {esito === 'copiato' && (
@@ -387,9 +398,21 @@ function FormAccesso({ open, onClose, worker }: { open: boolean; onClose: () => 
             </p>
           )}
 
-          <Button variant="ghost" full onClick={() => { onClose(); setFatto(false) }}>Cerrar</Button>
+          <p className="text-[13px] leading-relaxed text-ink-500">
+            Si {worker.name.split(' ')[0]} pierde sus datos, vuelve aquí y se los mandas otra vez.
+            Solo tú puedes verlos.
+          </p>
+
+          <Button variant="ghost" full onClick={() => {
+            setVista('apuntar'); setUtente((worker.access_login ?? '').split('@')[0]); setPassword(worker.access_password ?? '')
+          }}>
+            <IconEdit className="h-4 w-4" /> Corregir lo apuntado
+          </Button>
         </div>
-      ) : (
+      )}
+
+      {/* ------------------------------------------------------------- crearlas */}
+      {vista === 'crear' && (
         <div className="space-y-4">
           <p className="text-[14px] leading-relaxed text-ink-500">
             Elige tú las credenciales de {worker.name.split(' ')[0]} y luego se las das.
@@ -397,9 +420,9 @@ function FormAccesso({ open, onClose, worker }: { open: boolean; onClose: () => 
           </p>
           <Field label="Usuario" hint={utente ? `Entrará escribiendo “${utente}”.` : undefined}>
             <input className={inputCls} value={utente} onChange={e => setUtente(e.target.value.toLowerCase())}
-                   autoCapitalize="none" autoCorrect="off" spellCheck={false} placeholder="carlo" />
+                   autoCapitalize="none" autoCorrect="off" spellCheck={false} placeholder="carlos" />
           </Field>
-          <Field label="Contraseña" hint="Al menos 6 caracteres. Apúntala en algún sitio antes de seguir.">
+          <Field label="Contraseña" hint="Al menos 6 caracteres. Quedará guardada aquí para que puedas volver a mandársela.">
             <div className="flex gap-2">
               <input className={inputCls} value={password} onChange={e => setPassword(e.target.value)} placeholder="ej. carlos2026" />
               <Button variant="ghost" onClick={() => setPassword(generaPassword())}>Generar</Button>
@@ -412,6 +435,31 @@ function FormAccesso({ open, onClose, worker }: { open: boolean; onClose: () => 
           <p className="text-center text-[12px] text-ink-400">
             Entrará como <b>{normalizzaLogin(utente) || '—'}</b>
           </p>
+        </div>
+      )}
+
+      {/* ---------------------------------------------- annotarle a posteriori */}
+      {vista === 'apuntar' && (
+        <div className="space-y-4">
+          <p className="text-[14px] leading-relaxed text-ink-500">
+            {worker.access_login
+              ? `Corrige aquí el usuario y la contraseña de ${worker.name.split(' ')[0]}.`
+              : `Este acceso se creó antes de que la app guardara las credenciales. Escríbelas aquí y a partir de ahora podrás mandárselas cuando quieras.`}
+          </p>
+          <Field label="Usuario">
+            <input className={inputCls} value={utente} onChange={e => setUtente(e.target.value.toLowerCase())}
+                   autoCapitalize="none" autoCorrect="off" spellCheck={false} placeholder="carlos" />
+          </Field>
+          <Field label="Contraseña" hint="La que le diste. La app no puede leerla: la tienes que escribir tú.">
+            <input className={inputCls} value={password} onChange={e => setPassword(e.target.value)} placeholder="ej. carlos2026" />
+          </Field>
+          <Errore>{errore}</Errore>
+          <Button size="lg" full onClick={apunta} disabled={attesa || !utente || !password}>
+            {attesa ? <Spinner /> : <><IconCheck className="h-5 w-5" /> Guardar</>}
+          </Button>
+          {apuntadas && (
+            <Button variant="ghost" full onClick={() => setVista('ver')}>Cancelar</Button>
+          )}
         </div>
       )}
     </Sheet>

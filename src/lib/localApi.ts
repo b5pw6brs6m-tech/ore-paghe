@@ -33,7 +33,8 @@ function seed(): Db {
     const workerUserId = uid()
     const w: Worker = {
       id: uid(), admin_id: adminId, user_id: workerUserId, name: nome,
-      hourly_rate: tariffa, link_code: codiceCasuale(), active: true, created_at: now(),
+      hourly_rate: tariffa, link_code: codiceCasuale(),
+      access_login: login, access_password: 'demo', active: true, created_at: now(),
     }
     db.workers.push(w)
     db.accounts.push({ userId: workerUserId, login, password: 'demo', fullName: nome, role: 'worker' })
@@ -152,6 +153,20 @@ export const localApi: Api = {
     save()
   },
 
+  async recuperaPassword() {
+    throw new Error('En modo de prueba no se envían correos. Pídele las credenciales al jefe.')
+  },
+
+  async cambiaPassword(nuova) {
+    const a = requireAccount()
+    a.password = nuova
+    save()
+  },
+
+  inRecupero() {
+    return false
+  },
+
   async listWorkers() {
     const a = requireAccount()
     return db.workers
@@ -164,7 +179,8 @@ export const localApi: Api = {
     if (a.role !== 'admin') throw new Error('Solo el jefe puede añadir trabajadores.')
     const w: Worker = {
       id: uid(), admin_id: a.userId, user_id: null, name: name.trim(),
-      hourly_rate: round2(hourlyRate), link_code: codiceCasuale(), active: true, created_at: now(),
+      hourly_rate: round2(hourlyRate), link_code: codiceCasuale(),
+      access_login: null, access_password: null, active: true, created_at: now(),
     }
     db.workers.push(w)
     save()
@@ -196,6 +212,8 @@ export const localApi: Api = {
     const userId = uid()
     db.accounts.push({ userId, login: l, password, fullName: w.name, role: 'worker' })
     w.user_id = userId
+    w.access_login = l
+    w.access_password = password
     save()
   },
 
