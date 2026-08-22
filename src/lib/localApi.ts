@@ -167,6 +167,12 @@ export const localApi: Api = {
     return false
   },
 
+  async verificaCredenziali(login, password) {
+    await wait()
+    const l = normalizzaLogin(login)
+    return db.accounts.some(a => a.login === l && a.password === password)
+  },
+
   async listWorkers() {
     const a = requireAccount()
     return db.workers

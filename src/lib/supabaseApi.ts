@@ -104,6 +104,22 @@ export const supabaseApi: Api = {
     return recupero
   },
 
+  /**
+   * Prova a entrare su un client separato che non salva nulla: serve a dire
+   * subito al titolare se le credenziali che ha annotato funzionano davvero.
+   * Senza questo controllo si rischia di mandarne al lavoratore di sbagliate.
+   */
+  async verificaCredenziali(login, password) {
+    const usaEDimentica = createClient(URL!, KEY!, {
+      auth: { persistSession: false, autoRefreshToken: false, detectSessionInUrl: false },
+    })
+    const { data, error } = await usaEDimentica.auth.signInWithPassword({
+      email: normalizzaLogin(login), password,
+    })
+    if (!error && data.session) await usaEDimentica.auth.signOut()
+    return Boolean(!error && data.session)
+  },
+
   async listWorkers() {
     const { data, error } = await sb().from('workers').select('*').order('name')
     boom(error)

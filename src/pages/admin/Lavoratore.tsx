@@ -381,6 +381,11 @@ function FormAccesso({ open, onClose, worker }: { open: boolean; onClose: () => 
     try {
       if (!utente.trim()) throw new Error('Escribe el usuario que le diste.')
       if (!password) throw new Error('Escribe la contraseña que le diste.')
+      // Si comprueba de verdad: si no funcionan, no se guardan.
+      const valgono = await db.verificaCredenziali(utente.trim(), password)
+      if (!valgono) {
+        throw new Error('Con estos datos no se entra. Revísalos: si no te acuerdas de la contraseña, dímelo y te creamos un acceso nuevo.')
+      }
       await db.updateWorker(worker.id, {
         access_login: normalizzaLogin(utente.trim()),
         access_password: password,
@@ -495,12 +500,12 @@ function FormAccesso({ open, onClose, worker }: { open: boolean; onClose: () => 
             <input className={inputCls} value={utente} onChange={e => setUtente(e.target.value.toLowerCase())}
                    autoCapitalize="none" autoCorrect="off" spellCheck={false} placeholder="carlos" />
           </Field>
-          <Field label="Contraseña" hint="La que le diste. La app no puede leerla: la tienes que escribir tú.">
+          <Field label="Contraseña" hint="La que le diste. Compruebo que funcione antes de guardarla.">
             <input className={inputCls} value={password} onChange={e => setPassword(e.target.value)} placeholder="ej. carlos2026" />
           </Field>
           <Errore>{errore}</Errore>
           <Button size="lg" full onClick={apunta} disabled={attesa || !utente || !password}>
-            {attesa ? <Spinner /> : <><IconCheck className="h-5 w-5" /> Guardar</>}
+            {attesa ? <Spinner /> : <><IconCheck className="h-5 w-5" /> Comprobar y guardar</>}
           </Button>
           {apuntadas && (
             <Button variant="ghost" full onClick={() => setVista('ver')}>Cancelar</Button>

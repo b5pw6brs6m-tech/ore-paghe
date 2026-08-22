@@ -24,6 +24,8 @@ export interface Api {
   cambiaPassword(nuova: string): Promise<void>
   /** true quando si è arrivati dal link di recupero ricevuto per email. */
   inRecupero(): boolean
+  /** Prova le credenziali senza toccare la sessione in corso. */
+  verificaCredenziali(login: string, password: string): Promise<boolean>
 
   // --- Area admin ---
   listWorkers(): Promise<Worker[]>
