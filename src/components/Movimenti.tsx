@@ -1,6 +1,6 @@
 import { Card, Vuoto } from './ui'
 import { IconChart, IconClock, IconWallet } from './icons'
-import { dataMedia, euro, maiuscola, oreLabel } from '../lib/format'
+import { dataBreve, dataMedia, euro, maiuscola, oreLabel } from '../lib/format'
 import { movimenti } from '../lib/movimenti'
 import type { Entry, Payment } from '../lib/types'
 
@@ -29,13 +29,13 @@ export function Movimenti({ entries, payments, vuotoTesto, limite, onElimina }: 
       {righe.map(m => {
         const pagamento = m.tipo === 'pagamento'
         return (
-          <Card key={m.id} className="flex items-center gap-3.5 px-4 py-3.5">
+          <Card key={m.id} className="flex items-center gap-3 px-3.5 py-3.5">
             <div className={`rounded-2xl p-2.5 ${pagamento ? 'bg-emerald-50 text-emerald-600' : 'bg-brand-50 text-brand-600'}`}>
               {pagamento ? <IconWallet className="h-5 w-5" /> : <IconClock className="h-5 w-5" />}
             </div>
 
             <div className="min-w-0 flex-1">
-              <p className="truncate text-[15px] font-bold text-ink-900">{maiuscola(dataMedia(m.data))}</p>
+              <p className="truncate text-[15px] font-bold text-ink-900">{maiuscola(onElimina ? dataBreve(m.data) : dataMedia(m.data))}</p>
               <p className="truncate text-[13px] text-ink-500">
                 {m.tipo === 'ora'
                   ? `${oreLabel(m.entry.hours)}${m.entry.start_time && m.entry.end_time ? ` · ${m.entry.start_time}–${m.entry.end_time}` : ''}`
@@ -54,10 +54,10 @@ export function Movimenti({ entries, payments, vuotoTesto, limite, onElimina }: 
               <button
                 onClick={() => onElimina({ tipo: m.tipo, id: m.id })}
                 aria-label="Eliminar"
-                className="ml-1 shrink-0 rounded-xl bg-rose-50 p-2 text-rose-500 transition active:scale-90"
+                className="-mr-1 shrink-0 rounded-lg p-1.5 text-ink-300 transition active:scale-90 active:text-rose-500"
               >
                 <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor"
-                     strokeWidth={2} strokeLinecap="round"><path d="M6 6l12 12M18 6 6 18" /></svg>
+                     strokeWidth={2.2} strokeLinecap="round"><path d="M6 6l12 12M18 6 6 18" /></svg>
               </button>
             )}
           </Card>
