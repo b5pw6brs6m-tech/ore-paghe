@@ -173,26 +173,25 @@ function Mini({ v, t }: { v: string; t: string }) {
 
 export function FormPagamento({ open, onClose, worker, saldo }: { open: boolean; onClose: () => void; worker: Worker; saldo: number }) {
   const { refresh } = useApp()
-  const [importo, setImporto] = useState('')
-  const [bonus, setBonus] = useState('')
+  const [importo, setImporto] = useState('')   // quanto gli dà per le ore
+  const [bonus, setBonus] = useState('')       // quanto gli regala in più
   const [data, setData] = useState(todayISO())
   const [metodo, setMetodo] = useState('Efectivo')
   const [nota, setNota] = useState('')
   const [errore, setErrore] = useState('')
   const [attesa, setAttesa] = useState(false)
 
+  // I due campi si SOMMANO: è così che lo pensa chi paga.
+  const oreNum = Math.max(0, Number(String(importo).replace(',', '.')) || 0)
   const bonusNum = Math.max(0, Number(String(bonus).replace(',', '.')) || 0)
+  const totaleDato = round2(oreNum + bonusNum)
 
   async function salva() {
     setErrore(''); setAttesa(true)
     try {
-      const v = Number(String(importo).replace(',', '.'))
-      if (!Number.isFinite(v) || v <= 0) throw new Error('Pon el importe que le has pagado.')
-      const b = bonus.trim() ? Number(String(bonus).replace(',', '.')) : 0
-      if (!Number.isFinite(b) || b < 0) throw new Error('El bonus no es válido.')
-      if (b > v) throw new Error('El bonus no puede ser mayor que lo que le das en total.')
+      if (totaleDato <= 0) throw new Error('Pon cuánto le das.')
       await db.addPayment({
-        worker_id: worker.id, paid_on: data, amount: v, bonus: b,
+        worker_id: worker.id, paid_on: data, amount: totaleDato, bonus: bonusNum,
         method: metodo || null, note: nota.trim() || null,
       })
       refresh()
@@ -210,24 +209,28 @@ export function FormPagamento({ open, onClose, worker, saldo }: { open: boolean;
           Ahora mismo le debes <b>{euro(saldo)}</b>
         </div>
 
-        <Field label="¿Cuánto le das en total? (€)">
+        <Field label="Por sus horas (€)">
           <input className={`${inputCls} text-center text-[30px] font-extrabold`} value={importo}
                  onChange={e => setImporto(e.target.value)} type="text" inputMode="decimal" placeholder="0,00" autoFocus />
         </Field>
 
-        <Field label="¿Va algún bonus dentro? (€)"
-               hint="Lo que le regalas por encima de sus horas. Déjalo vacío si no hay.">
+        {saldo > 0 && (
+          <button onClick={() => setImporto(saldo.toFixed(2).replace('.', ','))}
+                  className="w-full rounded-2xl bg-white px-4 py-3 text-[14px] font-semibold text-brand-700 ring-1 ring-ink-200 active:scale-[.98] transition">
+            Todo lo que le debes: {euro(saldo)}
+          </button>
+        )}
+
+        <Field label="Bonus, si le das algo extra (€)"
+               hint="Se SUMA a lo de arriba. Déjalo vacío si no hay bonus.">
           <input className={inputCls} value={bonus} onChange={e => setBonus(e.target.value)}
                  type="text" inputMode="decimal" placeholder="0,00" />
         </Field>
 
-        {(saldo > 0 || bonusNum > 0) && (
-          <button onClick={() => setImporto((saldo + bonusNum).toFixed(2).replace('.', ','))}
-                  className="w-full rounded-2xl bg-white px-4 py-3 text-[14px] font-semibold text-brand-700 ring-1 ring-ink-200 active:scale-[.98] transition">
-            Saldar todo: {euro(saldo + bonusNum)}
-            {bonusNum > 0 && <span className="text-ink-400"> (incluye {euro(bonusNum)} de bonus)</span>}
-          </button>
-        )}
+        <div className="flex items-center justify-between rounded-2xl bg-ink-900 px-5 py-4 text-white">
+          <span className="text-[14px] text-white/70">En total le das</span>
+          <span className="text-[24px] font-extrabold leading-none">{euro(totaleDato)}</span>
+        </div>
 
         <Field label="Fecha del pago">
           <input type="date" className={inputCls} value={data} onChange={e => e.target.value && setData(e.target.value)} />
@@ -251,7 +254,7 @@ export function FormPagamento({ open, onClose, worker, saldo }: { open: boolean;
         </Field>
 
         <Errore>{errore}</Errore>
-        <Button size="lg" full variant="success" onClick={salva} disabled={attesa || !importo}>
+        <Button size="lg" full variant="success" onClick={salva} disabled={attesa || totaleDato <= 0}>
           {attesa ? <Spinner /> : <><IconCheck className="h-5 w-5" /> Registrar el pago</>}
         </Button>
       </div>
