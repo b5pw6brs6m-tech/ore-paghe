@@ -26,10 +26,17 @@ export function guadagnoEntry(e: Entry): number {
 
 export function riepilogo(entries: Entry[], payments: Payment[]): Summary {
   const totalHours = round2(entries.reduce((a, e) => a + e.hours, 0))
-  const totalEarned = round2(entries.reduce((a, e) => a + guadagnoEntry(e), 0))
+  const totalWork = round2(entries.reduce((a, e) => a + guadagnoEntry(e), 0))
+  // Il bonus è denaro guadagnato in più, non un anticipo: aumenta il dovuto
+  // e poi il pagamento lo copre. Senza questo, regalare 50 € risulterebbe
+  // come aver pagato 50 € in anticipo.
+  const totalBonus = round2(payments.reduce((a, p) => a + (p.bonus || 0), 0))
+  const totalEarned = round2(totalWork + totalBonus)
   const totalPaid = round2(payments.reduce((a, p) => a + p.amount, 0))
   return {
     totalHours,
+    totalWork,
+    totalBonus,
     totalEarned,
     totalPaid,
     balance: round2(totalEarned - totalPaid),

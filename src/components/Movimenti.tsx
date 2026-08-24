@@ -1,5 +1,5 @@
 import { Card, Vuoto } from './ui'
-import { IconChart, IconClock, IconWallet } from './icons'
+import { IconChart, IconClock, IconRegalo, IconWallet } from './icons'
 import { dataBreve, dataMedia, euro, maiuscola, oreLabel } from '../lib/format'
 import { movimenti } from '../lib/movimenti'
 import type { Entry, Payment } from '../lib/types'
@@ -28,10 +28,16 @@ export function Movimenti({ entries, payments, vuotoTesto, limite, onElimina }: 
     <div className="space-y-2.5">
       {righe.map(m => {
         const pagamento = m.tipo === 'pagamento'
+        const bonus = m.tipo === 'bonus'
         return (
           <Card key={m.id} className="flex items-center gap-3 px-3.5 py-3.5">
-            <div className={`rounded-2xl p-2.5 ${pagamento ? 'bg-emerald-50 text-emerald-600' : 'bg-brand-50 text-brand-600'}`}>
-              {pagamento ? <IconWallet className="h-5 w-5" /> : <IconClock className="h-5 w-5" />}
+            <div className={`rounded-2xl p-2.5 ${
+              pagamento ? 'bg-emerald-50 text-emerald-600'
+              : bonus ? 'bg-amber-50 text-amber-600'
+              : 'bg-brand-50 text-brand-600'}`}>
+              {pagamento ? <IconWallet className="h-5 w-5" />
+                : bonus ? <IconRegalo className="h-5 w-5" />
+                : <IconClock className="h-5 w-5" />}
             </div>
 
             <div className="min-w-0 flex-1">
@@ -39,18 +45,21 @@ export function Movimenti({ entries, payments, vuotoTesto, limite, onElimina }: 
               <p className="truncate text-[13px] text-ink-500">
                 {m.tipo === 'ora'
                   ? `${oreLabel(m.entry.hours)}${m.entry.start_time && m.entry.end_time ? ` · ${m.entry.start_time}–${m.entry.end_time}` : ''}`
+                  : m.tipo === 'bonus'
+                  ? 'Bonus'
                   : [m.payment.method, m.payment.note].filter(Boolean).join(' · ') || 'Pago'}
               </p>
             </div>
 
             <div className="shrink-0 text-right">
-              <p className={`text-[15px] font-extrabold ${pagamento ? 'text-emerald-600' : 'text-ink-900'}`}>
+              <p className={`text-[15px] font-extrabold ${
+                pagamento ? 'text-emerald-600' : bonus ? 'text-amber-600' : 'text-ink-900'}`}>
                 {pagamento ? '−' : '+'}{euro(Math.abs(m.importo))}
               </p>
               <p className="text-[11px] text-ink-400">quedan {euro(m.saldoDopo)}</p>
             </div>
 
-            {onElimina && (
+            {onElimina && m.tipo !== 'bonus' && (
               <button
                 onClick={() => onElimina({ tipo: m.tipo, id: m.id })}
                 aria-label="Eliminar"

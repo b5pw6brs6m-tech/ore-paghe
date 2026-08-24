@@ -68,8 +68,8 @@ function seed(): Db {
   turno(ana, 5, '09:00', '18:00', 60)
 
   db.payments.push({
-    id: uid(), worker_id: carlos.id, paid_on: giorniFa(5), amount: 200,
-    method: 'Contanti', note: 'Adelanto de la semana pasada', created_at: now(),
+    id: uid(), worker_id: carlos.id, paid_on: giorniFa(5), amount: 220, bonus: 20,
+    method: 'Efectivo', note: 'Adelanto de la semana pasada', created_at: now(),
   })
 
   return db

@@ -47,6 +47,8 @@ export type Payment = {
   worker_id: string
   paid_on: string          // YYYY-MM-DD
   amount: number
+  /** Quanto di quell'importo è un regalo: non salda ore, le aggiunge. */
+  bonus: number
   method: string | null
   note: string | null
   created_at: string
@@ -66,12 +68,17 @@ export type NewPayment = {
   worker_id: string
   paid_on: string
   amount: number
+  bonus: number
   method: string | null
   note: string | null
 }
 
 export type Summary = {
   totalHours: number
+  /** Solo le ore, senza i bonus. */
+  totalWork: number
+  totalBonus: number
+  /** Ore più bonus: tutto quello che gli spetta. */
   totalEarned: number
   totalPaid: number
   balance: number

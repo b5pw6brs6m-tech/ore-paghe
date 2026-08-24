@@ -61,6 +61,11 @@ create table if not exists public.payments (
   created_by uuid not null default auth.uid() references auth.users(id),
   created_at timestamptz not null default now()
 );
+-- Parte dell'importo regalata: non salda un debito, lo aumenta e poi lo copre.
+alter table public.payments add column if not exists bonus numeric(10,2) not null default 0;
+alter table public.payments drop constraint if exists payments_bonus_check;
+alter table public.payments add constraint payments_bonus_check check (bonus >= 0 and bonus <= amount);
+
 create index if not exists payments_worker_idx on public.payments(worker_id, paid_on desc);
 
 -- ------------------------------------------------- 2. Tariffa "congelata"

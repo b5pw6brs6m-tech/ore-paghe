@@ -174,20 +174,29 @@ function Mini({ v, t }: { v: string; t: string }) {
 export function FormPagamento({ open, onClose, worker, saldo }: { open: boolean; onClose: () => void; worker: Worker; saldo: number }) {
   const { refresh } = useApp()
   const [importo, setImporto] = useState('')
+  const [bonus, setBonus] = useState('')
   const [data, setData] = useState(todayISO())
   const [metodo, setMetodo] = useState('Efectivo')
   const [nota, setNota] = useState('')
   const [errore, setErrore] = useState('')
   const [attesa, setAttesa] = useState(false)
 
+  const bonusNum = Math.max(0, Number(String(bonus).replace(',', '.')) || 0)
+
   async function salva() {
     setErrore(''); setAttesa(true)
     try {
       const v = Number(String(importo).replace(',', '.'))
       if (!Number.isFinite(v) || v <= 0) throw new Error('Pon el importe que le has pagado.')
-      await db.addPayment({ worker_id: worker.id, paid_on: data, amount: v, method: metodo || null, note: nota.trim() || null })
+      const b = bonus.trim() ? Number(String(bonus).replace(',', '.')) : 0
+      if (!Number.isFinite(b) || b < 0) throw new Error('El bonus no es válido.')
+      if (b > v) throw new Error('El bonus no puede ser mayor que lo que le das en total.')
+      await db.addPayment({
+        worker_id: worker.id, paid_on: data, amount: v, bonus: b,
+        method: metodo || null, note: nota.trim() || null,
+      })
       refresh()
-      setImporto(''); setNota('')
+      setImporto(''); setBonus(''); setNota('')
       onClose()
     } catch (err) {
       setErrore(err instanceof Error ? err.message : 'No he podido guardar.')
@@ -201,15 +210,22 @@ export function FormPagamento({ open, onClose, worker, saldo }: { open: boolean;
           Ahora mismo le debes <b>{euro(saldo)}</b>
         </div>
 
-        <Field label="¿Cuánto le has pagado? (€)">
+        <Field label="¿Cuánto le das en total? (€)">
           <input className={`${inputCls} text-center text-[30px] font-extrabold`} value={importo}
                  onChange={e => setImporto(e.target.value)} type="text" inputMode="decimal" placeholder="0,00" autoFocus />
         </Field>
 
-        {saldo > 0 && (
-          <button onClick={() => setImporto(saldo.toFixed(2).replace('.', ','))}
+        <Field label="¿Va algún bonus dentro? (€)"
+               hint="Lo que le regalas por encima de sus horas. Déjalo vacío si no hay.">
+          <input className={inputCls} value={bonus} onChange={e => setBonus(e.target.value)}
+                 type="text" inputMode="decimal" placeholder="0,00" />
+        </Field>
+
+        {(saldo > 0 || bonusNum > 0) && (
+          <button onClick={() => setImporto((saldo + bonusNum).toFixed(2).replace('.', ','))}
                   className="w-full rounded-2xl bg-white px-4 py-3 text-[14px] font-semibold text-brand-700 ring-1 ring-ink-200 active:scale-[.98] transition">
-            Saldar todo: {euro(saldo)}
+            Saldar todo: {euro(saldo + bonusNum)}
+            {bonusNum > 0 && <span className="text-ink-400"> (incluye {euro(bonusNum)} de bonus)</span>}
           </button>
         )}
 

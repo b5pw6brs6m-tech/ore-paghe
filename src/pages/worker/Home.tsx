@@ -85,7 +85,11 @@ export default function WorkerHome({ worker }: { worker: Worker }) {
 
       <Sezione titolo="Tu cuenta">
         <Card className="divide-y divide-ink-100">
-          <RigaConto etichetta="Has ganado" valore={euro(r.totalEarned)} colore="text-ink-900" />
+          <RigaConto etichetta={r.totalBonus > 0 ? 'Por tus horas' : 'Has ganado'}
+                     valore={euro(r.totalWork)} colore="text-ink-900" />
+          {r.totalBonus > 0 && (
+            <RigaConto etichetta="Bonus que te he dado" valore={`+ ${euro(r.totalBonus)}`} colore="text-amber-600" />
+          )}
           <RigaConto etichetta="Ya te he pagado" valore={`− ${euro(r.totalPaid)}`} colore="text-emerald-600" />
           <div className="flex items-center justify-between px-5 py-4">
             <span className="text-[15px] font-bold text-ink-900">

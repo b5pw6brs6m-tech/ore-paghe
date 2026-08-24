@@ -84,6 +84,11 @@ export default function AdminPagamenti() {
                         <p className="truncate text-[13px] text-ink-500">
                           {maiuscola(dataMedia(p.paid_on))}{p.method ? ` · ${p.method}` : ''}
                         </p>
+                        {p.bonus > 0 && (
+                          <p className="truncate text-[12.5px] font-semibold text-amber-600">
+                            Incluye {euro(p.bonus)} de bonus
+                          </p>
+                        )}
                       </div>
                       <p className="text-[17px] font-extrabold text-emerald-600">{euro(p.amount)}</p>
                       <button onClick={() => void elimina(p.id)} aria-label="Eliminar"

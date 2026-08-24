@@ -70,6 +70,11 @@ export function RigaPagamento({ p, onDelete }: { p: Payment; onDelete?: () => vo
         <p className="truncate text-[13px] text-ink-500">
           {[p.method, p.note].filter(Boolean).join(' · ') || 'Pago registrado'}
         </p>
+        {p.bonus > 0 && (
+          <p className="mt-0.5 truncate text-[12.5px] font-semibold text-amber-600">
+            Incluye {euro(p.bonus)} de bonus
+          </p>
+        )}
       </div>
       <p className="text-[17px] font-extrabold text-emerald-600">{euro(p.amount)}</p>
       {onDelete && (
