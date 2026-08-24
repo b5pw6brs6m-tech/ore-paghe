@@ -1,12 +1,16 @@
 import { Card, Vuoto } from './ui'
 import { IconChart, IconClock, IconRegalo, IconWallet } from './icons'
-import { dataBreve, dataMedia, euro, maiuscola, oreLabel } from '../lib/format'
-import { movimenti } from '../lib/movimenti'
+import { dataMedia, euro, maiuscola, oreLabel } from '../lib/format'
+import { movimenti, type Movimento } from '../lib/movimenti'
 import type { Entry, Payment } from '../lib/types'
 
 /**
- * Storico unico: ogni giornata e ogni pagamento in ordine di data,
- * con il saldo residuo dopo ciascun movimento.
+ * Storico raggruppato per giornata, con il saldo una volta sola in fondo a
+ * ogni giorno.
+ *
+ * Prima il saldo stava su ogni riga: leggendo dall'alto faceva 0, 80, 64 e
+ * sembravano cifre a caso, perché quei numeri hanno senso solo scorrendo dal
+ * basso. Per giornata invece si legge come un estratto conto.
  */
 export function Movimenti({ entries, payments, vuotoTesto, limite, onElimina }: {
   entries: Entry[]
@@ -24,54 +28,86 @@ export function Movimenti({ entries, payments, vuotoTesto, limite, onElimina }: 
     return <Vuoto icona={<IconChart className="h-6 w-6" />} titolo="Todavía no hay movimientos" testo={vuotoTesto} />
   }
 
+  // Le giornate restano nell'ordine in cui arrivano: dalla più recente.
+  const giornate: Array<{ data: string; righe: Movimento[]; saldo: number }> = []
+  for (const m of righe) {
+    const ultima = giornate[giornate.length - 1]
+    if (ultima && ultima.data === m.data) ultima.righe.push(m)
+    // il saldo del giorno è quello dopo l'ultimo movimento, cioè il primo che incontriamo
+    else giornate.push({ data: m.data, righe: [m], saldo: m.saldoDopo })
+  }
+
   return (
-    <div className="space-y-2.5">
-      {righe.map(m => {
-        const pagamento = m.tipo === 'pagamento'
-        const bonus = m.tipo === 'bonus'
-        return (
-          <Card key={m.id} className="flex items-center gap-3 px-3.5 py-3.5">
-            <div className={`rounded-2xl p-2.5 ${
-              pagamento ? 'bg-emerald-50 text-emerald-600'
-              : bonus ? 'bg-amber-50 text-amber-600'
-              : 'bg-brand-50 text-brand-600'}`}>
-              {pagamento ? <IconWallet className="h-5 w-5" />
-                : bonus ? <IconRegalo className="h-5 w-5" />
-                : <IconClock className="h-5 w-5" />}
-            </div>
+    <div className="space-y-3">
+      {giornate.map(g => (
+        <Card key={g.data} className="overflow-hidden">
+          <div className="flex items-center justify-between gap-3 border-b border-ink-100 bg-ink-50/70 px-4 py-2.5">
+            <span className="truncate text-[13.5px] font-bold text-ink-700">{maiuscola(dataMedia(g.data))}</span>
+            <span className="shrink-0 text-[12px] text-ink-400">
+              saldo <b className={g.saldo > 0 ? 'text-brand-600' : 'text-emerald-600'}>{euro(g.saldo)}</b>
+            </span>
+          </div>
 
-            <div className="min-w-0 flex-1">
-              <p className="truncate text-[15px] font-bold text-ink-900">{maiuscola(onElimina ? dataBreve(m.data) : dataMedia(m.data))}</p>
-              <p className="truncate text-[13px] text-ink-500">
-                {m.tipo === 'ora'
-                  ? `${oreLabel(m.entry.hours)}${m.entry.start_time && m.entry.end_time ? ` · ${m.entry.start_time}–${m.entry.end_time}` : ''}`
-                  : m.tipo === 'bonus'
-                  ? 'Bonus'
-                  : [m.payment.method, m.payment.note].filter(Boolean).join(' · ') || 'Pago'}
-              </p>
-            </div>
+          {/* dentro la giornata si legge in ordine: prima le ore, poi il bonus, poi il pagamento */}
+          <div className="divide-y divide-ink-100">
+            {[...g.righe].reverse().map(m => <Riga key={m.id} m={m} onElimina={onElimina} />)}
+          </div>
+        </Card>
+      ))}
+    </div>
+  )
+}
 
-            <div className="shrink-0 text-right">
-              <p className={`text-[15px] font-extrabold ${
-                pagamento ? 'text-emerald-600' : bonus ? 'text-amber-600' : 'text-ink-900'}`}>
-                {pagamento ? '−' : '+'}{euro(Math.abs(m.importo))}
-              </p>
-              <p className="text-[11px] text-ink-400">quedan {euro(m.saldoDopo)}</p>
-            </div>
+function Riga({ m, onElimina }: {
+  m: Movimento
+  onElimina?: (x: { tipo: 'ora' | 'pagamento'; id: string }) => void
+}) {
+  const pagamento = m.tipo === 'pagamento'
+  const bonus = m.tipo === 'bonus'
 
-            {onElimina && m.tipo !== 'bonus' && (
-              <button
-                onClick={() => onElimina({ tipo: m.tipo, id: m.id })}
-                aria-label="Eliminar"
-                className="-mr-1 shrink-0 rounded-lg p-1.5 text-ink-300 transition active:scale-90 active:text-rose-500"
-              >
-                <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor"
-                     strokeWidth={2.2} strokeLinecap="round"><path d="M6 6l12 12M18 6 6 18" /></svg>
-              </button>
-            )}
-          </Card>
-        )
-      })}
+  const colore = pagamento ? 'bg-emerald-50 text-emerald-600'
+    : bonus ? 'bg-amber-50 text-amber-600'
+    : 'bg-brand-50 text-brand-600'
+
+  const titolo = m.tipo === 'ora'
+    ? oreLabel(m.entry.hours)
+    : bonus ? 'Bonus'
+    : 'Pagado'
+
+  const sotto = m.tipo === 'ora'
+    ? [m.entry.start_time && m.entry.end_time ? `${m.entry.start_time}–${m.entry.end_time}` : null,
+       `${euro(m.entry.hourly_rate)}/h`].filter(Boolean).join(' · ')
+    : bonus ? ''                                   // l'icona del regalo e la parola bastano
+    : [m.payment.method, m.payment.note].filter(Boolean).join(' · ')
+
+  return (
+    <div className="flex items-center gap-3 px-4 py-3">
+      <div className={`shrink-0 rounded-xl p-2 ${colore}`}>
+        {pagamento ? <IconWallet className="h-[18px] w-[18px]" />
+          : bonus ? <IconRegalo className="h-[18px] w-[18px]" />
+          : <IconClock className="h-[18px] w-[18px]" />}
+      </div>
+
+      <div className="min-w-0 flex-1">
+        <p className="truncate text-[14.5px] font-bold text-ink-900">{titolo}</p>
+        {sotto && <p className="truncate text-[12.5px] text-ink-400">{sotto}</p>}
+      </div>
+
+      <p className={`shrink-0 text-[15px] font-extrabold ${
+        pagamento ? 'text-emerald-600' : bonus ? 'text-amber-600' : 'text-ink-900'}`}>
+        {pagamento ? '−' : '+'}{euro(Math.abs(m.importo))}
+      </p>
+
+      {onElimina && m.tipo !== 'bonus' && (
+        <button
+          onClick={() => onElimina({ tipo: m.tipo, id: m.id })}
+          aria-label="Eliminar"
+          className="-mr-1 shrink-0 rounded-lg p-1.5 text-ink-300 transition active:scale-90 active:text-rose-500"
+        >
+          <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor"
+               strokeWidth={2.2} strokeLinecap="round"><path d="M6 6l12 12M18 6 6 18" /></svg>
+        </button>
+      )}
     </div>
   )
 }
