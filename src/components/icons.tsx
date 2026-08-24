@@ -27,4 +27,5 @@ export const IconKey      = svg(<><circle cx="8" cy="12" r="3.5" /><path d="M11.
 export const IconInfo     = svg(<><circle cx="12" cy="12" r="9" /><path d="M12 11v5M12 8h.01" /></>)
 export const IconShare    = svg(<><path d="M12 15V4M8.5 7.5 12 4l3.5 3.5" /><path d="M5 13v5.5A1.5 1.5 0 0 0 6.5 20h11a1.5 1.5 0 0 0 1.5-1.5V13" /></>)
 export const IconRegalo  = svg(<><rect x="3.5" y="9.5" width="17" height="11" rx="2" /><path d="M3 9.5h18M12 9.5V20.5" /><path d="M12 9.5S10.5 5.5 8.2 5.5a2.2 2.2 0 0 0 0 4.4M12 9.5s1.5-4 3.8-4a2.2 2.2 0 0 1 0 4.4" /></>)
+export const IconOcchio  = svg(<><path d="M2.5 12S6 5.5 12 5.5 21.5 12 21.5 12 18 18.5 12 18.5 2.5 12 2.5 12Z" /><circle cx="12" cy="12" r="3.2" /></>)
 export const IconSun      = svg(<><circle cx="12" cy="12" r="4" /><path d="M12 2.5v2M12 19.5v2M2.5 12h2M19.5 12h2M5.2 5.2l1.4 1.4M17.4 17.4l1.4 1.4M18.8 5.2l-1.4 1.4M6.6 17.4l-1.4 1.4" /></>)

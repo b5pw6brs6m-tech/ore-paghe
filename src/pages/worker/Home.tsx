@@ -2,13 +2,14 @@ import { useEffect, useState } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { Button, Caricamento, Card, Vuoto } from '../../components/ui'
 import { Header, Sezione, saluto } from '../../components/Shell'
-import { IconCheck, IconClock, IconLogout, IconPlus, IconRight } from '../../components/icons'
+import { IconCheck, IconClock, IconLogout, IconOcchio, IconPlus, IconRight } from '../../components/icons'
 import { euro, dataBreve, dataMedia, maiuscola, oreLabel } from '../../lib/format'
 import { guadagnoEntry, riepilogo } from '../../lib/calc'
 import { db } from '../../lib/db'
 import { useApp, useCarica } from '../../context/AppContext'
 import type { Entry, Payment, Worker } from '../../lib/types'
 import { Movimenti } from '../../components/Movimenti'
+import { DettaglioGiornata } from '../../components/DettaglioGiornata'
 
 type Salvato = { ore: number; guadagno: number; data: string }
 
@@ -17,6 +18,7 @@ export default function WorkerHome({ worker }: { worker: Worker }) {
   const { state } = useLocation() as { state?: { salvato?: Salvato } }
   const { user, signOut } = useApp()
   const [conferma, setConferma] = useState<Salvato | null>(state?.salvato ?? null)
+  const [dettaglio, setDettaglio] = useState<Entry | null>(null)
 
   useEffect(() => {
     if (!conferma) return
@@ -116,9 +118,12 @@ export default function WorkerHome({ worker }: { worker: Worker }) {
             azione={<Button variant="soft" onClick={() => nav('/registra')}>Registrar la primera jornada</Button>}
           />
         ) : (
-          <Movimenti entries={entries} payments={payments} vuotoTesto="" limite={4} />
+          <Movimenti entries={entries} payments={payments} vuotoTesto="" limite={4} onApri={setDettaglio} />
         )}
       </Sezione>
+
+      <DettaglioGiornata entry={dettaglio} worker={worker} perIlLavoratore
+                         onClose={() => setDettaglio(null)} />
     </>
   )
 }
@@ -150,9 +155,9 @@ export function RigaGiorno({ e, onDelete, onApri }: { e: Entry; onDelete?: () =>
       </div>
       <div className={`min-w-0 flex-1 ${onApri ? 'transition active:opacity-60' : ''}`}
            role={onApri ? 'button' : undefined} onClick={onApri}>
-        <p className="text-[15px] font-bold text-ink-900">
+        <p className="flex items-center gap-1.5 text-[15px] font-bold text-ink-900">
           {maiuscola(dataBreve(e.work_date))}
-          {onApri && <span className="ml-1.5 text-[12px] font-semibold text-brand-500">ver</span>}
+          {onApri && <IconOcchio className="h-4 w-4 shrink-0 text-brand-400" />}
         </p>
         <p className="truncate text-[13px] text-ink-500">
           {e.start_time && e.end_time

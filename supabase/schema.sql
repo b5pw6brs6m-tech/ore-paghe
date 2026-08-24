@@ -232,9 +232,8 @@ create policy "ore: il lavoratore registra oggi" on public.work_entries for inse
     (public.e_lavoratore_di(worker_id) and work_date = public.oggi())
     or public.e_admin_di(worker_id)
   );
--- Il lavoratore può cancellare solo un errore appena fatto (24 ore), non riscrivere il passato.
-create policy "ore: correggo entro 24 ore" on public.work_entries for delete
-  using (public.e_lavoratore_di(worker_id) and created_at > now() - interval '24 hours');
+-- Il lavoratore registra e consulta, ma non cancella e non modifica: le
+-- correzioni le fa il titolare. (La vecchia regola delle 24 ore è stata tolta.)
 create policy "ore: il titolare corregge" on public.work_entries for update
   using (public.e_admin_di(worker_id)) with check (public.e_admin_di(worker_id));
 create policy "ore: il titolare elimina"  on public.work_entries for delete using (public.e_admin_di(worker_id));

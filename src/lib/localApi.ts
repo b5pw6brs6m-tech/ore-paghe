@@ -266,13 +266,8 @@ export const localApi: Api = {
 
   async deleteEntry(id) {
     const a = requireAccount()
-    const e = db.entries.find(x => x.id === id)
-    if (!e) return
-    // Il lavoratore può cancellare solo un errore appena fatto; il titolare sempre.
-    if (a.role === 'worker') {
-      const limite = new Date(Date.now() - 24 * 3600e3).toISOString()
-      if (e.created_at < limite) throw new Error('Solo puedes corregir una jornada dentro de las 24 horas. Pídeselo al jefe.')
-    }
+    // Solo il titolare cancella: il lavoratore registra e consulta.
+    if (a.role !== 'admin') throw new Error('Solo el jefe puede borrar una jornada.')
     db.entries = db.entries.filter(x => x.id !== id)
     save()
   },

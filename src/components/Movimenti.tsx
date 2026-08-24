@@ -1,5 +1,5 @@
 import { Card, Vuoto } from './ui'
-import { IconChart, IconClock, IconRegalo, IconWallet } from './icons'
+import { IconChart, IconClock, IconOcchio, IconRegalo, IconWallet } from './icons'
 import { dataMedia, euro, maiuscola, oreLabel } from '../lib/format'
 import { movimenti, type Movimento } from '../lib/movimenti'
 import type { Entry, Payment } from '../lib/types'
@@ -99,9 +99,9 @@ function Riga({ m, onElimina, onApri }: {
       </div>
 
       <div className="min-w-0 flex-1">
-        <p className="truncate text-[14.5px] font-bold text-ink-900">
+        <p className="flex items-center gap-1.5 truncate text-[14.5px] font-bold text-ink-900">
           {titolo}
-          {apribile && <span className="ml-1.5 text-[12px] font-semibold text-brand-500">ver</span>}
+          {apribile && <IconOcchio className="h-4 w-4 shrink-0 text-brand-400" />}
         </p>
         {sotto && <p className="truncate text-[12.5px] text-ink-400">{sotto}</p>}
       </div>

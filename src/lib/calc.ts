@@ -59,8 +59,3 @@ export function perMese<T extends { work_date?: string; paid_on?: string }>(rows
   }
   return [...map.entries()].sort((a, b) => b[0].localeCompare(a[0]))
 }
-
-/** Il lavoratore può cancellare una propria registrazione solo entro 24 ore. */
-export function correggibile(createdAt: string): boolean {
-  return Date.now() - new Date(createdAt).getTime() < 24 * 3600e3
-}

@@ -1,23 +1,20 @@
+import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Button, Caricamento, Card, Vuoto } from '../../components/ui'
 import { Header } from '../../components/Shell'
 import { IconClock, IconPlus } from '../../components/icons'
 import { euro, meseLabel, oreLabel } from '../../lib/format'
-import { correggibile, guadagnoEntry, perMese, riepilogo, round2 } from '../../lib/calc'
+import { guadagnoEntry, perMese, riepilogo, round2 } from '../../lib/calc'
 import { db } from '../../lib/db'
-import { useApp, useCarica } from '../../context/AppContext'
+import { useCarica } from '../../context/AppContext'
 import type { Entry, Worker } from '../../lib/types'
+import { DettaglioGiornata } from '../../components/DettaglioGiornata'
 import { RigaGiorno } from './Home'
 
 export default function WorkerOre({ worker }: { worker: Worker }) {
   const nav = useNavigate()
-  const { refresh } = useApp()
+  const [dettaglio, setDettaglio] = useState<Entry | null>(null)
   const { dati: entries, caricando } = useCarica<Entry[]>(() => db.listEntries(worker.id), [worker.id], [])
-
-  async function cancella(id: string) {
-    if (!confirm('¿Borramos esta jornada?')) return
-    try { await db.deleteEntry(id); refresh() } catch (e) { alert(e instanceof Error ? e.message : 'Error') }
-  }
 
   if (caricando) return <Caricamento />
   const r = riepilogo(entries, [])
@@ -44,7 +41,8 @@ export default function WorkerOre({ worker }: { worker: Worker }) {
         ) : (
           <div className="space-y-7">
             <p className="rounded-2xl bg-white px-4 py-3 text-[13px] leading-relaxed text-ink-500 ring-1 ring-ink-200">
-              ¿Te has equivocado en una jornada? Puedes borrarla con la ✕ dentro de las 24 horas.
+              Toca una jornada para ver el detalle: a qué hora entraste, a qué hora saliste
+              y cómo salen esas horas. Si hay algo que no cuadra, díselo al jefe.
             </p>
             {mesi.map(([ym, righe]) => {
               const ore = round2(righe.reduce((a, e) => a + e.hours, 0))
@@ -59,8 +57,7 @@ export default function WorkerOre({ worker }: { worker: Worker }) {
                   </div>
                   <div className="space-y-2.5">
                     {righe.map(e => (
-                      <RigaGiorno key={e.id} e={e}
-                        onDelete={correggibile(e.created_at) ? () => void cancella(e.id) : undefined} />
+                      <RigaGiorno key={e.id} e={e} onApri={() => setDettaglio(e)} />
                     ))}
                   </div>
                 </section>
@@ -69,6 +66,9 @@ export default function WorkerOre({ worker }: { worker: Worker }) {
           </div>
         )}
       </div>
+
+      <DettaglioGiornata entry={dettaglio} worker={worker} perIlLavoratore
+                         onClose={() => setDettaglio(null)} />
     </>
   )
 }

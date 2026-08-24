@@ -33,7 +33,8 @@ Nessuno può barare:
 - può registrare **solo la giornata in corso** — niente giorni passati, niente futuri.
   È il suo obbligo di fine giornata, e la regola è imposta dal database, non solo
   dalla schermata: non è aggirabile;
-- può cancellare una giornata sbagliata solo entro 24 ore.
+- **non può cancellare né modificare** nulla: può registrare e consultare.
+  Se sbaglia, la correzione la fai tu dalla sua scheda.
 
 Se un lavoratore dimentica una giornata, la inserisci tu dalla sua scheda con
 **"Aggiungi una giornata dimenticata"**: è l'unica strada per una data passata.
