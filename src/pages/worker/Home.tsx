@@ -141,15 +141,19 @@ function RigaConto({ etichetta, valore, colore }: { etichetta: string; valore: s
   )
 }
 
-export function RigaGiorno({ e, onDelete }: { e: Entry; onDelete?: () => void }) {
+export function RigaGiorno({ e, onDelete, onApri }: { e: Entry; onDelete?: () => void; onApri?: () => void }) {
   return (
     <Card className="flex items-center gap-4 px-4 py-3.5">
       <div className="flex h-11 w-11 shrink-0 flex-col items-center justify-center rounded-2xl bg-brand-50 text-brand-700">
         <span className="text-[15px] font-extrabold leading-none">{e.work_date.slice(8)}</span>
         <span className="text-[9px] font-semibold uppercase leading-none mt-0.5">{dataBreve(e.work_date).split(' ')[2]}</span>
       </div>
-      <div className="min-w-0 flex-1">
-        <p className="text-[15px] font-bold text-ink-900">{maiuscola(dataBreve(e.work_date))}</p>
+      <div className={`min-w-0 flex-1 ${onApri ? 'transition active:opacity-60' : ''}`}
+           role={onApri ? 'button' : undefined} onClick={onApri}>
+        <p className="text-[15px] font-bold text-ink-900">
+          {maiuscola(dataBreve(e.work_date))}
+          {onApri && <span className="ml-1.5 text-[12px] font-semibold text-brand-500">ver</span>}
+        </p>
         <p className="truncate text-[13px] text-ink-500">
           {e.start_time && e.end_time
             ? `${e.start_time} – ${e.end_time}${e.break_minutes ? ` · descanso ${e.break_minutes}m` : ''}`

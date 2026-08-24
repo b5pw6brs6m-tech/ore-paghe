@@ -12,7 +12,7 @@ import type { Entry, Payment } from '../lib/types'
  * sembravano cifre a caso, perché quei numeri hanno senso solo scorrendo dal
  * basso. Per giornata invece si legge come un estratto conto.
  */
-export function Movimenti({ entries, payments, vuotoTesto, limite, onElimina }: {
+export function Movimenti({ entries, payments, vuotoTesto, limite, onElimina, onApri }: {
   entries: Entry[]
   payments: Payment[]
   vuotoTesto: string
@@ -20,6 +20,8 @@ export function Movimenti({ entries, payments, vuotoTesto, limite, onElimina }: 
   limite?: number
   /** Se presente, ogni riga mostra il tasto per cancellarla. */
   onElimina?: (m: { tipo: 'ora' | 'pagamento'; id: string }) => void
+  /** Se presente, toccando una giornata se ne apre il dettaglio. */
+  onApri?: (e: Entry) => void
 }) {
   const tutti = movimenti(entries, payments)
   const righe = limite ? tutti.slice(0, limite) : tutti
@@ -50,7 +52,7 @@ export function Movimenti({ entries, payments, vuotoTesto, limite, onElimina }: 
 
           {/* dentro la giornata si legge in ordine: prima le ore, poi il bonus, poi il pagamento */}
           <div className="divide-y divide-ink-100">
-            {[...g.righe].reverse().map(m => <Riga key={m.id} m={m} onElimina={onElimina} />)}
+            {[...g.righe].reverse().map(m => <Riga key={m.id} m={m} onElimina={onElimina} onApri={onApri} />)}
           </div>
         </Card>
       ))}
@@ -58,9 +60,10 @@ export function Movimenti({ entries, payments, vuotoTesto, limite, onElimina }: 
   )
 }
 
-function Riga({ m, onElimina }: {
+function Riga({ m, onElimina, onApri }: {
   m: Movimento
   onElimina?: (x: { tipo: 'ora' | 'pagamento'; id: string }) => void
+  onApri?: (e: Entry) => void
 }) {
   const pagamento = m.tipo === 'pagamento'
   const bonus = m.tipo === 'bonus'
@@ -80,8 +83,15 @@ function Riga({ m, onElimina }: {
     : bonus ? ''                                   // l'icona del regalo e la parola bastano
     : [m.payment.method, m.payment.note].filter(Boolean).join(' · ')
 
+  const apribile = m.tipo === 'ora' && Boolean(onApri)
+
   return (
     <div className="flex items-center gap-3 px-4 py-3">
+      <div
+        className={`flex min-w-0 flex-1 items-center gap-3 text-left ${apribile ? 'transition active:opacity-60' : ''}`}
+        role={apribile ? 'button' : undefined}
+        onClick={apribile && m.tipo === 'ora' ? () => onApri!(m.entry) : undefined}
+      >
       <div className={`shrink-0 rounded-xl p-2 ${colore}`}>
         {pagamento ? <IconWallet className="h-[18px] w-[18px]" />
           : bonus ? <IconRegalo className="h-[18px] w-[18px]" />
@@ -89,7 +99,10 @@ function Riga({ m, onElimina }: {
       </div>
 
       <div className="min-w-0 flex-1">
-        <p className="truncate text-[14.5px] font-bold text-ink-900">{titolo}</p>
+        <p className="truncate text-[14.5px] font-bold text-ink-900">
+          {titolo}
+          {apribile && <span className="ml-1.5 text-[12px] font-semibold text-brand-500">ver</span>}
+        </p>
         {sotto && <p className="truncate text-[12.5px] text-ink-400">{sotto}</p>}
       </div>
 
@@ -97,6 +110,7 @@ function Riga({ m, onElimina }: {
         pagamento ? 'text-emerald-600' : bonus ? 'text-amber-600' : 'text-ink-900'}`}>
         {pagamento ? '−' : '+'}{euro(Math.abs(m.importo))}
       </p>
+      </div>
 
       {onElimina && m.tipo !== 'bonus' && (
         <button

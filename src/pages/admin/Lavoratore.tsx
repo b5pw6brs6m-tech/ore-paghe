@@ -10,6 +10,7 @@ import { normalizzaLogin } from '../../lib/api'
 import { apriWhatsApp, condividiNativo, copiaTesto } from '../../lib/condividi'
 import { useApp, useCarica } from '../../context/AppContext'
 import type { Entry, Payment, Worker } from '../../lib/types'
+import { quandoLabel } from '../../lib/format'
 import { RigaGiorno } from '../worker/Home'
 import { Movimenti } from '../../components/Movimenti'
 import { RigaPagamento } from '../worker/Pagamenti'
@@ -23,6 +24,7 @@ export default function AdminLavoratore() {
   const [apriModifica, setApriModifica] = useState(false)
   const [apriAccesso, setApriAccesso] = useState(false)
   const [apriGiornata, setApriGiornata] = useState(false)
+  const [dettaglio, setDettaglio] = useState<Entry | null>(null)
 
   const { dati: workers, caricando: c1 } = useCarica<Worker[]>(() => db.listWorkers(), [], [])
   const { dati: entries, caricando: c2 } = useCarica<Entry[]>(() => db.listEntries(id), [id], [])
@@ -128,7 +130,8 @@ export default function AdminLavoratore() {
         {tab === 'tutto' ? (
           <Movimenti entries={entries} payments={payments}
                      vuotoTesto={`Aquí verás por fecha cada jornada de ${worker.name.split(' ')[0]} y cada pago que le hagas.`}
-                     onElimina={m => m.tipo === 'pagamento' ? void eliminaPagamento(m.id) : void eliminaOre(m.id)} />
+                     onElimina={m => m.tipo === 'pagamento' ? void eliminaPagamento(m.id) : void eliminaOre(m.id)}
+                     onApri={setDettaglio} />
         ) : tab === 'ore' ? (
           entries.length === 0 ? (
             <Vuoto icona={<IconClock className="h-6 w-6" />} titolo="Ninguna jornada"
@@ -136,7 +139,9 @@ export default function AdminLavoratore() {
                    azione={<Button variant="soft" onClick={() => setApriGiornata(true)}><IconPlus className="h-4 w-4" /> Añadir jornada</Button>} />
           ) : (
             <div className="space-y-2.5">
-              {entries.map(e => <RigaGiorno key={e.id} e={e} onDelete={() => void eliminaOre(e.id)} />)}
+              {entries.map(e => (
+                <RigaGiorno key={e.id} e={e} onApri={() => setDettaglio(e)} onDelete={() => void eliminaOre(e.id)} />
+              ))}
             </div>
           )
         ) : (
@@ -154,6 +159,8 @@ export default function AdminLavoratore() {
 
       <FormPagamento open={apriPagamento} onClose={() => setApriPagamento(false)} worker={worker} saldo={r.balance} />
       <FormGiornata open={apriGiornata} onClose={() => setApriGiornata(false)} worker={worker} />
+      <DettaglioGiornata entry={dettaglio} worker={worker} onClose={() => setDettaglio(null)}
+                         onElimina={() => { const id = dettaglio!.id; setDettaglio(null); void eliminaOre(id) }} />
       <FormModifica open={apriModifica} onClose={() => setApriModifica(false)} worker={worker} />
       <FormAccesso open={apriAccesso} onClose={() => setApriAccesso(false)} worker={worker} />
     </>
@@ -613,5 +620,100 @@ function FormGiornata({ open, onClose, worker }: { open: boolean; onClose: () =>
         </Button>
       </div>
     </Sheet>
+  )
+}
+
+/* ------------------------------------------------- dettaglio di una giornata */
+
+/**
+ * Il conto di una singola giornata, passo per passo: da che ora a che ora,
+ * quanto di pausa, e come si arriva alle ore pagate. Serve al titolare per
+ * controllare senza dover rifare i calcoli a mente.
+ */
+function DettaglioGiornata({ entry, worker, onClose, onElimina }: {
+  entry: Entry | null
+  worker: Worker
+  onClose: () => void
+  onElimina: () => void
+}) {
+  if (!entry) return null
+
+  const conOrari = Boolean(entry.start_time && entry.end_time)
+  const lorde = conOrari ? calcolaOre(entry.start_time!, entry.end_time!, 0) : entry.hours
+  const guadagno = round2(entry.hours * entry.hourly_rate)
+  const laHaMessaLui = Boolean(worker.user_id) && entry.created_by === worker.user_id
+  const notturno = conOrari && entry.end_time! < entry.start_time!
+
+  return (
+    <Sheet open onClose={onClose} title={maiuscola(dataLunga(entry.work_date))}>
+      <div className="space-y-4">
+        <div className="rounded-3xl bg-gradient-to-br from-ink-900 to-ink-700 px-6 py-6 text-center text-white">
+          <p className="text-[40px] font-extrabold leading-none tracking-tight">{oreLabel(entry.hours)}</p>
+          <p className="mt-2 text-[16px] font-semibold text-emerald-300">{euro(guadagno)}</p>
+        </div>
+
+        {conOrari ? (
+          <>
+            <Card className="divide-y divide-ink-100 ring-1 ring-ink-200">
+              <Voce etichetta="Entró a las" valore={entry.start_time!} forte />
+              <Voce etichetta="Salió a las" valore={entry.end_time!} forte />
+              <Voce etichetta="Descanso" valore={entry.break_minutes === 0 ? 'ninguno' : `${entry.break_minutes} min`} />
+            </Card>
+
+            {notturno && (
+              <p className="rounded-2xl bg-brand-50 px-4 py-3 text-[13px] font-medium text-brand-700">
+                Turno de noche: salió al día siguiente.
+              </p>
+            )}
+
+            <div>
+              <p className="mb-2 px-1 text-[13px] font-semibold text-ink-500">Cómo salen esas horas</p>
+              <Card className="divide-y divide-ink-100 ring-1 ring-ink-200">
+                <Voce etichetta="Desde que entró hasta que salió" valore={oreLabel(lorde)} />
+                <Voce etichetta="Menos el descanso"
+                      valore={entry.break_minutes === 0 ? '—' : `− ${oreLabel(entry.break_minutes / 60)}`} />
+                <Voce etichetta="Horas que se pagan" valore={oreLabel(entry.hours)} forte />
+              </Card>
+            </div>
+          </>
+        ) : (
+          <Card className="px-5 py-4 ring-1 ring-ink-200">
+            <p className="text-[14px] text-ink-500">
+              Esta jornada se apuntó solo con el total de horas, sin la hora de entrada y salida.
+            </p>
+          </Card>
+        )}
+
+        <div>
+          <p className="mb-2 px-1 text-[13px] font-semibold text-ink-500">Cuánto se le paga</p>
+          <Card className="divide-y divide-ink-100 ring-1 ring-ink-200">
+            <Voce etichetta="Horas" valore={oreLabel(entry.hours)} />
+            <Voce etichetta="Tarifa de ese día" valore={`${euro(entry.hourly_rate)}/h`} />
+            <Voce etichetta="Total de la jornada" valore={euro(guadagno)} forte />
+          </Card>
+        </div>
+
+        <p className="px-1 text-[12.5px] leading-relaxed text-ink-400">
+          {laHaMessaLui
+            ? `La apuntó ${worker.name.split(' ')[0]} ${quandoLabel(entry.created_at)}.`
+            : `La añadiste tú ${quandoLabel(entry.created_at)}.`}
+        </p>
+
+        <Button variant="danger" full onClick={onElimina}>
+          <IconTrash className="h-4 w-4" /> Eliminar esta jornada
+        </Button>
+      </div>
+    </Sheet>
+  )
+}
+
+function Voce({ etichetta, valore, forte }: { etichetta: string; valore: string; forte?: boolean }) {
+  return (
+    <div className="flex items-center justify-between gap-3 px-5 py-3.5">
+      <span className={cx('text-[14px]', forte ? 'font-semibold text-ink-900' : 'text-ink-500')}>{etichetta}</span>
+      <span className={cx('shrink-0 tabular-nums', forte ? 'text-[16px] font-extrabold text-ink-900' : 'text-[15px] font-semibold text-ink-700')}>
+        {valore}
+      </span>
+    </div>
   )
 }
