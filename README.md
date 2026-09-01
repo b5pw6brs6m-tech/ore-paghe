@@ -30,9 +30,10 @@ segreto viene rifiutata.
 Nessuno può barare:
 
 - il lavoratore **non può** registrare pagamenti;
-- può registrare **solo la giornata in corso** — niente giorni passati, niente futuri.
-  È il suo obbligo di fine giornata, e la regola è imposta dal database, non solo
-  dalla schermata: non è aggirabile;
+- può registrare **solo la giornata di oggi o quella di ieri** — niente di più
+  indietro, niente nel futuro. Il margine di un giorno serve a chi stacca tardi
+  e se ne dimentica. La regola è imposta dal database, non solo dalla schermata:
+  non è aggirabile;
 - **non può cancellare né modificare** nulla: può registrare e consultare.
   Se sbaglia, la correzione la fai tu dalla sua scheda.
 

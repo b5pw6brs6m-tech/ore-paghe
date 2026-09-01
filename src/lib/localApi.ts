@@ -251,9 +251,12 @@ export const localApi: Api = {
     const a = requireAccount()
     const w = db.workers.find(x => x.id === e.worker_id)
     if (!w) throw new Error('Trabajador no encontrado.')
-    // Stessa regola del database: il lavoratore registra solo la giornata di oggi.
-    if (a.role === 'worker' && e.work_date !== todayISO()) {
-      throw new Error('Solo puedes registrar la jornada de hoy.')
+    // Stessa regola del database: oggi oppure ieri, mai più indietro né nel futuro.
+    if (a.role === 'worker') {
+      const ieri = new Date(); ieri.setDate(ieri.getDate() - 1)
+      if (e.work_date > todayISO() || e.work_date < toISO(ieri)) {
+        throw new Error('Solo puedes registrar la jornada de hoy o la de ayer.')
+      }
     }
     const row: Entry = {
       id: uid(), ...e, hours: round2(e.hours), hourly_rate: w.hourly_rate,

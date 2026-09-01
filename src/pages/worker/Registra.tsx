@@ -4,20 +4,26 @@ import { Button, Card, Errore, Field, inputCls, Spinner, cx } from '../../compon
 import { SceltaOrario } from '../../components/SceltaOrario'
 import { IconCheck, IconClock, IconLeft } from '../../components/icons'
 import { calcolaOre, minutiDa, round2 } from '../../lib/calc'
-import { dataLunga, euro, maiuscola, oreLabel, todayISO } from '../../lib/format'
+import { dataLunga, euro, maiuscola, oreLabel, todayISO, toISO } from '../../lib/format'
 import { db } from '../../lib/db'
 import { useApp } from '../../context/AppContext'
 import type { Worker } from '../../lib/types'
 
 /**
- * Le ore si registrano SOLO per la giornata in corso: è l'obbligo di fine
- * giornata del lavoratore. Non c'è scelta della data, e la stessa regola è
- * imposta anche dal database, così non è aggirabile.
+ * Si registra la giornata di oggi o quella di ieri, niente di più indietro.
+ * Il margine di un giorno serve a chi stacca tardi e se ne dimentica: la
+ * regola è imposta anche dal database, così non è aggirabile.
  */
 
-type Passo = 0 | 1 | 2 | 3
-const PASSI = 4
-const PREGUNTAS = ['¿A qué hora entraste?', '¿A qué hora saliste?', '¿Hiciste descanso?', '¿Está todo bien?']
+type Passo = 0 | 1 | 2 | 3 | 4
+const PASSI = 5
+const PREGUNTAS = [
+  '¿Qué día trabajaste?',
+  '¿A qué hora entraste?',
+  '¿A qué hora saliste?',
+  '¿Hiciste descanso?',
+  '¿Está todo bien?',
+]
 
 export default function Registra({ worker }: { worker: Worker }) {
   const nav = useNavigate()
@@ -31,17 +37,19 @@ export default function Registra({ worker }: { worker: Worker }) {
   const [attesa, setAttesa] = useState(false)
 
   const oggi = todayISO()
+  const ieri = useMemo(() => { const d = new Date(); d.setDate(d.getDate() - 1); return toISO(d) }, [])
+  const [data, setData] = useState(oggi)
   const ore = useMemo(() => calcolaOre(entrata, uscita, pausa), [entrata, uscita, pausa])
   const guadagno = round2(ore * worker.hourly_rate)
 
   function avanti() {
     setErrore('')
-    if (passo === 0 && minutiDa(entrata) === null) return setErrore('Pon una hora de entrada válida.')
-    if (passo === 1) {
+    if (passo === 1 && minutiDa(entrata) === null) return setErrore('Pon una hora de entrada válida.')
+    if (passo === 2) {
       if (minutiDa(uscita) === null) return setErrore('Pon una hora de salida válida.')
       if (calcolaOre(entrata, uscita, 0) === 0) return setErrore('La entrada y la salida coinciden: revisa las horas.')
     }
-    if (passo === 2 && ore <= 0) return setErrore('El descanso dura más que el turno: revisa los datos.')
+    if (passo === 3 && ore <= 0) return setErrore('El descanso dura más que el turno: revisa los datos.')
     setPasso(p => Math.min(PASSI - 1, p + 1) as Passo)
   }
 
@@ -56,7 +64,7 @@ export default function Registra({ worker }: { worker: Worker }) {
     try {
       await db.addEntry({
         worker_id: worker.id,
-        work_date: todayISO(),                    // ricalcolata al momento del salvataggio
+        work_date: data,
         start_time: entrata,
         end_time: uscita,
         break_minutes: pausa,
@@ -64,11 +72,11 @@ export default function Registra({ worker }: { worker: Worker }) {
         note: null,
       })
       refresh()
-      nav('/', { replace: true, state: { salvato: { ore, guadagno, data: todayISO() } } })
+      nav('/', { replace: true, state: { salvato: { ore, guadagno, data } } })
     } catch (err) {
       const m = err instanceof Error ? err.message : ''
       setErrore(/row-level security|violates|42501/i.test(m)
-        ? 'Solo puedes registrar la jornada de hoy. Si ya ha pasado la medianoche, pídele al jefe que la meta él.'
+        ? 'Solo puedes registrar la jornada de hoy o la de ayer. Si es más antigua, pídele al jefe que la meta él.'
         : m || 'No he podido guardar.')
       setAttesa(false)
     }
@@ -101,7 +109,9 @@ export default function Registra({ worker }: { worker: Worker }) {
 
           <div className="mt-5 inline-flex items-center gap-2 rounded-full bg-white/15 px-3.5 py-1.5">
             <IconClock className="h-4 w-4" />
-            <span className="text-[13px] font-semibold">Hoy · {dataLunga(oggi)}</span>
+            <span className="text-[13px] font-semibold">
+              {data === oggi ? 'Hoy' : 'Ayer'} · {dataLunga(data)}
+            </span>
           </div>
 
           <h1 className="mt-4 text-[27px] font-extrabold leading-tight tracking-tight">{PREGUNTAS[passo]}</h1>
@@ -110,13 +120,31 @@ export default function Registra({ worker }: { worker: Worker }) {
         <div key={passo} className="animate-rise space-y-4 px-5 pt-6 pb-40">
 
           {passo === 0 && (
+            <div className="grid grid-cols-1 gap-3">
+              {[[oggi, 'Hoy'], [ieri, 'Ayer']].map(([g, etichetta]) => (
+                <button key={g} onClick={() => setData(g)}
+                  className={cx('rounded-3xl px-5 py-6 text-left transition active:scale-[.97]',
+                    data === g ? 'bg-brand-600 text-white shadow-lg shadow-brand-600/25'
+                               : 'bg-white text-ink-900 ring-1 ring-ink-200')}>
+                  <span className="block text-[22px] font-extrabold leading-tight">{etichetta}</span>
+                  <span className={cx('mt-1 block text-[14px]',
+                    data === g ? 'text-white/75' : 'text-ink-400')}>{maiuscola(dataLunga(g))}</span>
+                </button>
+              ))}
+              <p className="px-1 text-center text-[12.5px] leading-relaxed text-ink-400">
+                Más atrás no se puede. Si se te ha pasado un día antiguo, díselo al jefe.
+              </p>
+            </div>
+          )}
+
+          {passo === 1 && (
             <>
               <SceltaOrario valore={entrata} onChange={setEntrata} etichetta="Hora de entrada" />
               <Presets valori={['06:00', '07:00', '08:00', '09:00', '14:00', '15:00']} attivo={entrata} onPick={setEntrata} />
             </>
           )}
 
-          {passo === 1 && (
+          {passo === 2 && (
             <>
               <SceltaOrario valore={uscita} onChange={setUscita} etichetta="Hora de salida" />
               <Presets valori={['12:00', '13:00', '17:00', '18:00', '19:00', '22:00']} attivo={uscita} onPick={setUscita} />
@@ -129,7 +157,7 @@ export default function Registra({ worker }: { worker: Worker }) {
             </>
           )}
 
-          {passo === 2 && (
+          {passo === 3 && (
             <>
               <div className="grid grid-cols-2 gap-3">
                 {[[0, 'Sin descanso'], [30, '30 minutos'], [60, '1 hora'], [90, 'Hora y media']].map(([v, t]) => (
@@ -150,11 +178,11 @@ export default function Registra({ worker }: { worker: Worker }) {
             </>
           )}
 
-          {passo === 3 && (
+          {passo === 4 && (
             <>
               <Card className="overflow-hidden">
                 <div className="bg-gradient-to-br from-ink-900 to-ink-700 px-6 py-7 text-center text-white">
-                  <p className="text-[13px] font-medium text-white/60">{maiuscola(dataLunga(oggi))}</p>
+                  <p className="text-[13px] font-medium text-white/60">{maiuscola(dataLunga(data))}</p>
                   <p className="mt-2 text-[44px] font-extrabold leading-none tracking-tight">{oreLabel(ore)}</p>
                   <p className="mt-2 text-[15px] font-semibold text-emerald-300">{euro(guadagno)}</p>
                 </div>
@@ -174,7 +202,7 @@ export default function Registra({ worker }: { worker: Worker }) {
 
         <div className="fixed inset-x-0 bottom-0 z-40 safe-bottom">
           <div className="mx-auto max-w-[480px] border-t border-ink-200/60 bg-white/92 px-5 py-4 backdrop-blur-xl">
-            {passo < 3 ? (
+            {passo < 4 ? (
               <Button size="lg" full onClick={avanti}>
                 Siguiente
                 <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth={2}

@@ -366,8 +366,8 @@ function FormAccesso({ open, onClose, worker }: { open: boolean; onClose: () => 
     `Usuario: ${(vista === 'ver' ? usuario : utente).split('@')[0]}\n` +
     `Contraseña: ${vista === 'ver' ? clave : password}\n\n` +
     `*4) Cada tarde, al terminar de trabajar*\n` +
-    `Abre la app y apunta las horas que has hecho. Solo se puede el mismo día: ` +
-    `al día siguiente ya no se puede.\n\n` +
+    `Abre la app y apunta las horas que has hecho. Si un día se te pasa, ` +
+    `tienes hasta el día siguiente para meterlas.\n\n` +
     `Ahí ves siempre los días que has trabajado, lo que llevas ganado y lo que te he pagado. ` +
     `Cualquier duda me dices.`
 

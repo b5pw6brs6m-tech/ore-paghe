@@ -80,8 +80,8 @@ export default function WorkerHome({ worker }: { worker: Worker }) {
           <IconPlus className="h-5 w-5" /> Registrar las horas de hoy
         </Button>
         <p className="mt-2.5 text-center text-[12px] leading-relaxed text-ink-400">
-          Solo se registra la jornada de hoy, al terminar.
-          <br />Mañana ya no se podrá.
+          Apúntalas al terminar el día. Si se te pasa,
+          <br />tienes hasta el día siguiente.
         </p>
       </div>
 
