@@ -172,11 +172,13 @@ returns boolean language sql stable security definer set search_path = public as
   select exists (select 1 from public.workers where id = w and admin_id = auth.uid())
 $$;
 
--- "Oggi" secondo il fuso italiano: il database gira in UTC e vicino a mezzanotte
--- darebbe la data sbagliata.
+-- "Oggi" secondo il fuso delle Canarie, dove stanno titolare e lavoratori.
+-- Il database gira in UTC: senza questo, vicino a mezzanotte darebbe una data
+-- diversa da quella che vedono loro sul telefono, e la registrazione di ieri
+-- verrebbe rifiutata per un'ora ogni notte.
 create or replace function public.oggi()
 returns date language sql stable as $$
-  select (now() at time zone 'Europe/Rome')::date
+  select (now() at time zone 'Atlantic/Canary')::date
 $$;
 
 create or replace function public.e_lavoratore_di(w uuid)
