@@ -224,12 +224,14 @@ drop policy if exists "ore: correggo entro 24 ore"      on public.work_entries;
 drop policy if exists "ore: il titolare corregge"       on public.work_entries;
 drop policy if exists "ore: il titolare elimina"        on public.work_entries;
 create policy "ore: lettura" on public.work_entries for select using (public.puo_vedere_worker(worker_id));
--- Il lavoratore registra SOLO la giornata di oggi: niente giorni passati, niente futuri.
--- È il suo obbligo di fine giornata. Il titolare invece può inserire qualsiasi data,
--- per rimediare a una giornata dimenticata.
+-- Il lavoratore registra la giornata di oggi o quella di ieri: se finisce tardi
+-- e se ne dimentica, ha tempo fino al giorno dopo. Più indietro no, e nel futuro
+-- mai. Il titolare invece può inserire qualsiasi data, per rimediare.
 create policy "ore: il lavoratore registra oggi" on public.work_entries for insert
   with check (
-    (public.e_lavoratore_di(worker_id) and work_date = public.oggi())
+    (public.e_lavoratore_di(worker_id)
+      and work_date <= public.oggi()
+      and work_date >= public.oggi() - 1)
     or public.e_admin_di(worker_id)
   );
 -- Il lavoratore registra e consulta, ma non cancella e non modifica: le
