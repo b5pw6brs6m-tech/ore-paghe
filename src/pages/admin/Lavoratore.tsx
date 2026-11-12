@@ -94,6 +94,23 @@ export default function AdminLavoratore() {
         </div>
       </header>
 
+      {worker.user_id && !worker.active && (
+        <div className="px-5 pt-5">
+          <Card className="border border-rose-200 bg-rose-50 p-4 shadow-none">
+            <p className="text-[14px] font-bold text-rose-900">Acceso desactivado</p>
+            <p className="mt-1 text-[13px] leading-relaxed text-rose-800">
+              {worker.name.split(' ')[0]} no puede entrar en la app. Sus horas y sus pagos siguen aquí guardados.
+            </p>
+            <Button variant="ghost" className="mt-3" onClick={async () => {
+              try { await db.impostaAccesso(worker.id, true); refresh() }
+              catch (err) { alert(err instanceof Error ? err.message : 'No he podido activar el acceso.') }
+            }}>
+              <IconKey className="h-4 w-4" /> Volver a activar el acceso
+            </Button>
+          </Card>
+        </div>
+      )}
+
       {!worker.user_id && (
         <div className="px-5 pt-5">
           <Card className="border border-amber-200 bg-amber-50 p-4 shadow-none">

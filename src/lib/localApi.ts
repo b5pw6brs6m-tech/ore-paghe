@@ -133,6 +133,9 @@ export const localApi: Api = {
     const l = normalizzaLogin(login)
     const acc = db.accounts.find(a => a.login === l)
     if (!acc || acc.password !== password) throw new Error('Datos incorrectos. Revisa el usuario y la contraseña.')
+    if (db.workers.some(w => w.user_id === acc.userId && !w.active)) {
+      throw new Error('Tu acceso está desactivado. Habla con tu jefe.')
+    }
     db.sessionUserId = acc.userId
     save()
   },
@@ -227,15 +230,23 @@ export const localApi: Api = {
     save()
   },
 
+  async impostaAccesso(workerId, attivo) {
+    const a = requireAccount()
+    const w = db.workers.find(x => x.id === workerId && x.admin_id === a.userId)
+    if (!w) throw new Error('Solo el jefe puede cambiar el acceso.')
+    w.active = attivo
+    save()
+  },
+
   async segnaPresenza() {
     const a = requireAccount()
-    const w = db.workers.find(x => x.user_id === a.userId)
+    const w = db.workers.find(x => x.user_id === a.userId && x.active)
     if (w) { w.last_seen = now(); save() }
   },
 
   async myWorker() {
     const a = requireAccount()
-    return db.workers.find(w => w.user_id === a.userId) ?? null
+    return db.workers.find(w => w.user_id === a.userId && w.active) ?? null
   },
 
   async listEntries(workerId) {

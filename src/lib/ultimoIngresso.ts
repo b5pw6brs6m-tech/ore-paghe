@@ -16,6 +16,7 @@ function stato(iso: string | null): Stato {
  * registrato niente: dice se si è fatto vivo.
  */
 export function ultimoAccesso(worker: Worker): { stato: Stato; testo: string } {
+  if (worker.user_id && !worker.active) return { stato: 'mai', testo: 'Acceso desactivado' }
   const s = stato(worker.last_seen)
   if (s === 'mai') {
     return { stato: 'mai', testo: worker.user_id ? 'Todavía no ha entrado' : 'Sin acceso todavía' }

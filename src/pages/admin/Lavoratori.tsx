@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Button, Caricamento, Card, Errore, Field, Led, Sheet, Spinner, Vuoto, Avatar, inputCls } from '../../components/ui'
+import { Button, Caricamento, Card, Errore, Field, Interruttore, Led, Sheet, Spinner, Vuoto, Avatar, cx, inputCls } from '../../components/ui'
 import { Header, Sezione } from '../../components/Shell'
 import { IconBell, IconLogout, IconPlus, IconRight, IconUsers } from '../../components/icons'
 import { euro, oreLabel, dataBreve } from '../../lib/format'
@@ -13,8 +13,26 @@ import type { Entry, Payment, Worker } from '../../lib/types'
 
 export default function AdminLavoratori() {
   const nav = useNavigate()
-  const { user, signOut } = useApp()
+  const { user, signOut, refresh } = useApp()
   const [apriNuovo, setApriNuovo] = useState(false)
+
+  // Interruttore dell'accesso: mentre il database risponde mostriamo già il
+  // nuovo stato, così il tocco si vede subito.
+  const [inCambio, setInCambio] = useState<Record<string, boolean>>({})
+  async function cambiaAccesso(w: Worker, attivo: boolean) {
+    const nome = w.name.split(' ')[0]
+    if (!attivo && !confirm(`¿Desactivar el acceso de ${nome}?\n\nNo podrá entrar en la app hasta que lo vuelvas a activar. Sus horas y sus pagos se quedan guardados.`)) return
+    setInCambio(s => ({ ...s, [w.id]: attivo }))
+    try {
+      await db.impostaAccesso(w.id, attivo)
+      refresh()
+    } catch (err) {
+      alert(err instanceof Error ? err.message : 'No he podido cambiar el acceso.')
+    } finally {
+      // Lasciamo il tempo ai dati nuovi di arrivare prima di togliere lo stato provvisorio.
+      setTimeout(() => setInCambio(s => { const n = { ...s }; delete n[w.id]; return n }), 600)
+    }
+  }
 
   const { dati: workers, caricando: c1 } = useCarica<Worker[]>(() => db.listWorkers(), [], [])
   const { dati: entries, caricando: c2 } = useCarica<Entry[]>(() => db.listEntries(), [], [])
@@ -43,11 +61,16 @@ export default function AdminLavoratori() {
 
   if (c1 || c2 || c3) return <Caricamento />
 
-  const totali = workers.map(w => ({
-    w,
-    r: riepilogo(entries.filter(e => e.worker_id === w.id), payments.filter(p => p.worker_id === w.id)),
-    accesso: ultimoAccesso(w),
-  }))
+  const totali = workers.map(w => {
+    // Lo stato provvisorio dell'interruttore vince finché il database non conferma.
+    const attivo = w.id in inCambio ? inCambio[w.id] : w.active
+    return {
+      w, attivo,
+      r: riepilogo(entries.filter(e => e.worker_id === w.id), payments.filter(p => p.worker_id === w.id)),
+      accesso: ultimoAccesso({ ...w, active: attivo }),
+    }
+  })
+  const attivi = workers.filter(w => w.active).length
   const daPagare = round2(totali.reduce((a, t) => a + t.r.balance, 0))
   const oreTotali = round2(totali.reduce((a, t) => a + t.r.totalHours, 0))
 
@@ -68,8 +91,8 @@ export default function AdminLavoratori() {
           <p className="mt-1 text-[42px] font-extrabold leading-none tracking-tight">{euro(daPagare)}</p>
           <div className="mt-4 grid grid-cols-2 gap-2 border-t border-white/20 pt-4 text-center">
             <div>
-              <p className="text-[16px] font-bold leading-tight">{workers.length}</p>
-              <p className="text-[11px] text-white/60">{workers.length === 1 ? 'trabajador' : 'trabajadores'}</p>
+              <p className="text-[16px] font-bold leading-tight">{attivi}</p>
+              <p className="text-[11px] text-white/60">{attivi === 1 ? 'trabajador activo' : 'trabajadores activos'}</p>
             </div>
             <div>
               <p className="text-[16px] font-bold leading-tight">{oreLabel(oreTotali)}</p>
@@ -128,9 +151,11 @@ export default function AdminLavoratori() {
           />
         ) : (
           <div className="space-y-2.5">
-            {totali.map(({ w, r, accesso }) => (
-              <Card key={w.id} onClick={() => nav(`/lavoratore/${w.id}`)} className="overflow-hidden">
-                <div className="flex items-center gap-3.5 px-4 pt-4 pb-3.5">
+            {totali.map(({ w, r, accesso, attivo }) => (
+              <Card key={w.id} className="overflow-hidden">
+                <button onClick={() => nav(`/lavoratore/${w.id}`)}
+                        className={cx('flex w-full items-center gap-3.5 px-4 pt-4 pb-3.5 text-left transition active:opacity-60',
+                          !attivo && 'opacity-55')}>
                   <Avatar name={w.name} />
                   <div className="min-w-0 flex-1">
                     <p className="truncate text-[16px] font-bold text-ink-900">{w.name}</p>
@@ -145,16 +170,25 @@ export default function AdminLavoratori() {
                     <p className="text-[11px] text-ink-400">{r.balance > 0 ? 'por pagar' : r.balance < 0 ? 'por adelantado' : 'al día'}</p>
                   </div>
                   <IconRight className="h-4 w-4 shrink-0 text-ink-300" />
-                </div>
+                </button>
 
-                {/* riga di stato: quando ha registrato l'ultima volta */}
-                <div className="flex items-center gap-2 border-t border-ink-100 bg-ink-50/60 px-4 py-2.5">
+                {/* riga di stato: ultimo accesso e interruttore per accenderlo o spegnerlo */}
+                <div className="flex items-center gap-2 border-t border-ink-100 bg-ink-50/60 py-2 pl-4 pr-3">
                   <Led stato={accesso.stato} />
-                  <span className="truncate text-[12.5px] text-ink-500">{accesso.testo}</span>
-                  <span className="ml-auto shrink-0 text-[12px] text-ink-400">
+                  <span className={cx('truncate text-[12.5px]', w.user_id && !attivo ? 'font-semibold text-rose-600' : 'text-ink-500')}>
+                    {accesso.testo}
+                  </span>
+                  <span className="ml-auto flex shrink-0 items-center gap-2 text-[12px] text-ink-400">
                     {!w.user_id
-                      ? <b className="font-semibold text-amber-600">falta el acceso</b>
-                      : `${r.days} ${r.days === 1 ? 'día' : 'días'}`}
+                      ? <b className="py-1 font-semibold text-amber-600">falta el acceso</b>
+                      : <>
+                          <span className={attivo ? 'font-semibold text-emerald-600' : ''}>{attivo ? 'Activo' : 'Desactivado'}</span>
+                          <Interruttore
+                            attivo={attivo} occupato={w.id in inCambio}
+                            etichetta={`Acceso de ${w.name}`}
+                            onCambia={v => void cambiaAccesso(w, v)}
+                          />
+                        </>}
                   </span>
                 </div>
               </Card>

@@ -152,6 +152,32 @@ export function Led({ stato }: { stato: 'oggi' | 'recente' | 'fermo' | 'mai' }) 
   )
 }
 
+/* ----------------------------------------------------------- Interruttore */
+
+export function Interruttore({ attivo, onCambia, occupato, etichetta }: {
+  attivo: boolean
+  onCambia: (nuovo: boolean) => void
+  occupato?: boolean
+  etichetta: string
+}) {
+  return (
+    <button
+      type="button" role="switch" aria-checked={attivo} aria-label={etichetta} disabled={occupato}
+      onClick={() => onCambia(!attivo)}
+      className={cx(
+        'relative inline-flex h-7 w-12 shrink-0 items-center rounded-full transition-colors duration-200',
+        attivo ? 'bg-emerald-500' : 'bg-ink-300',
+        occupato && 'opacity-60',
+      )}
+    >
+      <span className={cx(
+        'inline-block h-[22px] w-[22px] rounded-full bg-white shadow-md transition-transform duration-200',
+        attivo ? 'translate-x-[23px]' : 'translate-x-[3px]',
+      )} />
+    </button>
+  )
+}
+
 /* --------------------------------------------------------------- Spinner */
 
 export function Spinner({ className }: { className?: string }) {

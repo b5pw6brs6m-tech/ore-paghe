@@ -156,6 +156,10 @@ after insert on auth.users
 for each row execute function public.gestisci_nuovo_utente();
 
 -- ------------------------------------------------- 4. Chi può vedere cosa
+-- L'accesso di un lavoratore si accende e si spegne dall'app con l'interruttore
+-- (funzione imposta_accesso, più sotto), senza perdere lo storico di ore e pagamenti.
+-- Le funzioni qui sotto tengono conto di "active": un lavoratore disattivato
+-- non legge e non scrive più nulla, anche se ha ancora l'app aperta.
 -- Funzioni di appoggio in SECURITY DEFINER: evitano che i controlli di
 -- accesso si richiamino a vicenda all'infinito.
 
@@ -163,7 +167,7 @@ create or replace function public.puo_vedere_worker(w uuid)
 returns boolean language sql stable security definer set search_path = public as $$
   select exists (
     select 1 from public.workers
-    where id = w and (admin_id = auth.uid() or user_id = auth.uid())
+    where id = w and (admin_id = auth.uid() or (user_id = auth.uid() and active))
   )
 $$;
 
@@ -183,7 +187,7 @@ $$;
 
 create or replace function public.e_lavoratore_di(w uuid)
 returns boolean language sql stable security definer set search_path = public as $$
-  select exists (select 1 from public.workers where id = w and user_id = auth.uid())
+  select exists (select 1 from public.workers where id = w and user_id = auth.uid() and active)
 $$;
 
 -- ------------------------------------------- 4-bis. Segnale di presenza
@@ -193,10 +197,42 @@ $$;
 
 create or replace function public.segna_presenza()
 returns void language sql security definer set search_path = public as $$
-  update public.workers set last_seen = now() where user_id = auth.uid()
+  update public.workers set last_seen = now() where user_id = auth.uid() and active
 $$;
 
 grant execute on function public.segna_presenza() to authenticated;
+
+-- ------------------------------------- 4-ter. Interruttore dell'accesso
+-- Il titolare accende o spegne l'accesso di un suo lavoratore. Spegnerlo fa
+-- tre cose insieme: la scheda diventa non attiva (i permessi qui sopra gli
+-- chiudono subito ogni lettura e scrittura), l'utente non può più entrare
+-- nemmeno con usuario e password giusti, e le sessioni aperte vengono chiuse.
+-- Riaccenderlo rimette tutto com'era: stesse credenziali, stesso storico.
+
+create or replace function public.imposta_accesso(w uuid, attivo boolean)
+returns void language plpgsql security definer set search_path = public as $$
+declare
+  u uuid;
+begin
+  select user_id into u from public.workers where id = w and admin_id = auth.uid();
+  if not found then
+    raise exception 'NON_AUTORIZZATO';
+  end if;
+
+  update public.workers set active = attivo where id = w;
+
+  if u is not null then
+    update auth.users
+       set banned_until = case when attivo then null else timestamptz '2999-01-01' end
+     where id = u;
+    if not attivo then
+      delete from auth.sessions where user_id = u;
+    end if;
+  end if;
+end $$;
+
+revoke all on function public.imposta_accesso(uuid, boolean) from public, anon;
+grant execute on function public.imposta_accesso(uuid, boolean) to authenticated;
 
 -- --------------------------------------------------------------- 5. Regole
 
@@ -214,7 +250,8 @@ drop policy if exists "lavoratori: lettura"    on public.workers;
 drop policy if exists "lavoratori: inserisco"  on public.workers;
 drop policy if exists "lavoratori: modifico"   on public.workers;
 drop policy if exists "lavoratori: elimino"    on public.workers;
-create policy "lavoratori: lettura"   on public.workers for select using (admin_id = auth.uid() or user_id = auth.uid());
+-- Un lavoratore con la scheda disattivata (active = false) non vede più nulla.
+create policy "lavoratori: lettura"   on public.workers for select using (admin_id = auth.uid() or (user_id = auth.uid() and active));
 create policy "lavoratori: inserisco" on public.workers for insert with check (admin_id = auth.uid());
 create policy "lavoratori: modifico"  on public.workers for update using (admin_id = auth.uid()) with check (admin_id = auth.uid());
 create policy "lavoratori: elimino"   on public.workers for delete using (admin_id = auth.uid());

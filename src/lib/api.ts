@@ -35,6 +35,8 @@ export interface Api {
   updateWorker(id: string, patch: Partial<Pick<Worker, 'name' | 'hourly_rate' | 'active' | 'access_login' | 'access_password'>>): Promise<void>
   deleteWorker(id: string): Promise<void>
   createWorkerAccount(workerId: string, login: string, password: string): Promise<void>
+  /** Accende o spegne l'accesso di un lavoratore. Lo storico non si tocca. */
+  impostaAccesso(workerId: string, attivo: boolean): Promise<void>
 
   // --- Area lavoratore ---
   myWorker(): Promise<Worker | null>

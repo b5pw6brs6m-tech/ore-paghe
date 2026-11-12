@@ -93,8 +93,8 @@ function AreaLavoratore() {
       <div className="min-h-full bg-ink-100 p-5 pt-24">
         <Vuoto
           icona={<IconClock className="h-6 w-6" />}
-          titolo="Cuenta todavía sin vincular"
-          testo="Pídele al jefe que te vuelva a crear el acceso: tu perfil no está asociado a ningún trabajador."
+          titolo="Acceso no disponible"
+          testo="Tu acceso está desactivado o todavía no está vinculado. Habla con tu jefe."
           azione={<Button variant="soft" onClick={() => void signOut()}>Salir</Button>}
         />
       </div>

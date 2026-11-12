@@ -20,6 +20,8 @@ function sb(): SupabaseClient {
 function boom(error: { message: string } | null): void {
   if (!error) return
   const m = error.message || ''
+  if (/banned/i.test(m)) throw new Error('Tu acceso está desactivado. Habla con tu jefe.')
+  if (/NON_AUTORIZZATO/.test(m)) throw new Error('Solo el jefe puede cambiar el acceso.')
   if (/invalid login credentials/i.test(m)) throw new Error('Datos incorrectos. Revisa el usuario y la contraseña.')
   if (/already registered|already been registered/i.test(m)) throw new Error('Ese usuario ya existe. Elige otro.')
   if (/password should be at least/i.test(m)) throw new Error('La contraseña debe tener al menos 6 caracteres.')
@@ -179,6 +181,11 @@ export const supabaseApi: Api = {
     if (!check?.user_id) {
       throw new Error('No he podido vincular el acceso. Normalmente es porque ese usuario ya existe: prueba con otro. Si sigue fallando, revisa que el script SQL se haya ejecutado en Supabase.')
     }
+  },
+
+  async impostaAccesso(workerId, attivo) {
+    const { error } = await sb().rpc('imposta_accesso', { w: workerId, attivo })
+    boom(error)
   },
 
   async segnaPresenza() {
